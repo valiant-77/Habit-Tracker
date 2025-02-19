@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Progress - HabitTracker</title>
+    <link href="../css/style.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-gray-800">HabitTracker</span>
+                </div>
+                <div class="flex items-center">
+                    <a href="dashboard.html" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+            <h2 class="text-2xl font-bold mb-4">Weekly Progress</h2>
+            <canvas id="weeklyProgressChart"></canvas>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-bold mb-4">Monthly Progress Heatmap</h2>
+            <h4 id="monthLabel" class="text-center font-bold mb-4"></h4>
+            <div id="heatmap" class="grid grid-cols-7 gap-1"></div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-200 text-black py-8">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <p>&copy; 2025 HabitTracker. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        //Progress page script
+    // Bar Graph (Weekly Progress)
+    const weeklyProgressChart = new Chart(document.getElementById('weeklyProgressChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], // Days of the week
+            datasets: [{
+                label: 'Completion %',
+                data: [80, 60, 90, 70, 85, 50, 95], // Example data (replace with real data)
+                backgroundColor: 'rgba(59, 130, 246, 0.5)', // Blue color with transparency
+                borderColor: 'rgba(59, 130, 246, 1)', // Solid blue border
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Completion %'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Days of the Week'
+                    }
+                }
+            }
+        }
+    });
+    
+        document.addEventListener("DOMContentLoaded", function () {
+            const heatmap = document.getElementById('heatmap');
+            const monthLabel = document.getElementById('monthLabel');
+            const currentDate = new Date();
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            monthLabel.textContent = `${monthNames[month]} ${year}`;
+
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            heatmap.innerHTML = ""; 
+            const heatmapData = Array.from({ length: daysInMonth }, () => Math.floor(Math.random() * 100));
+
+            heatmapData.forEach((value, index) => {
+                const cell = document.createElement('div');
+                cell.className = `h-8 w-8 rounded-sm ${getHeatmapColor(value)}`;
+                cell.title = `Day ${index + 1}: ${value}%`;
+                heatmap.appendChild(cell);
+            });
+        });
+
+        function getHeatmapColor(value) {
+            if (value === 0) return 'bg-gray-200';
+            if (value <= 25) return 'bg-blue-100';
+            if (value <= 50) return 'bg-blue-300';
+            if (value <= 75) return 'bg-blue-500';
+            return 'bg-blue-700';
+        }
+    </script>
+</body>
+</html>

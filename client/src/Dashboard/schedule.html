@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Schedule - HabitTracker</title>
+    <link href="../css/style.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-lg">
+      <div class="mx-auto max-w-6xl px-4">
+        <div class="flex h-16 items-center justify-between">
+          <div class="flex items-center">
+            <span class="text-xl font-bold text-gray-800">HabitTracker</span>
+          </div>
+          <div class="flex items-center">
+            <a href="dashboard.html" class="rounded-md bg-gray-200 px-4 py-2 text-gray-800 hover:bg-gray-300">Back to Dashboard</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Schedule Content -->
+    <div class="mx-auto max-w-4xl px-4 py-8">
+      <h1 class="mb-8 text-center text-3xl font-bold">Your Schedule</h1>
+
+      <!-- Add Task Button -->
+      <div class="mb-4 text-right">
+        <button onclick="openAddTaskModal()" class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">+ Add Task</button>
+      </div>
+
+      <!-- Task Table -->
+      <div class="overflow-hidden rounded-lg bg-white shadow-lg">
+        <table class="w-full border border-gray-300">
+          <thead class="bg-gray-200">
+            <tr>
+              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tasks</th>
+              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Time</th>
+              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="taskTableBody" class="divide-y divide-gray-200">
+            <!-- Task Rows will be dynamically added here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Save Button -->
+    <div class="mb-4 flex justify-center">
+      <button id="saveButton" class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Save</button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="fixed bottom-0 mt-8 w-full bg-gray-200 py-4 text-center text-black">
+      <div class="mx-auto max-w-6xl px-4 text-center">
+        <p>&copy; 2023 HabitTracker. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <!-- Add Task Modal -->
+    <div id="addTaskModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50">
+      <div class="rounded-lg bg-white p-6 shadow-lg">
+        <h2 class="mb-4 text-xl font-bold">Add Task</h2>
+        <input type="text" id="taskName" placeholder="Task Name" class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2" />
+        <input type="time" id="taskTime" class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2" />
+        <div class="flex justify-end">
+          <button onclick="closeAddTaskModal()" class="mr-2 rounded-md bg-gray-300 px-4 py-2 text-gray-800 hover:bg-gray-400">Cancel</button>
+          <button onclick="addTask()" class="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div id="editTaskModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50">
+      <div class="rounded-lg bg-white p-6 shadow-lg">
+        <h2 class="mb-4 text-xl font-bold">Edit Task</h2>
+        <input type="text" id="editTaskName" placeholder="Task Name" class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2" />
+        <input type="time" id="editTaskTime" class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2" />
+        <div class="flex justify-end">
+          <button onclick="closeEditTaskModal()" class="mr-2 rounded-md bg-gray-300 px-4 py-2 text-gray-800 hover:bg-gray-400">Cancel</button>
+          <button onclick="saveEditedTask()" class="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Helper function to format time in AM/PM
+      function formatTime(time) {
+        if (!time) return ""; // Handle empty time
+
+        // Split the time into hours and minutes
+        const [hours, minutes] = time.split(":");
+
+        // Convert hours to 12-hour format
+        let formattedHours = parseInt(hours, 10);
+        const ampm = formattedHours >= 12 ? "PM" : "AM";
+        formattedHours = formattedHours % 12 || 12; // Convert 0 to 12
+
+        // Return formatted time (e.g., "1:00 PM")
+        return `${formattedHours}:${minutes} ${ampm}`;
+      }
+
+      // Helper function to convert 12-hour time to 24-hour time
+      function convertTo24HourFormat(time12h) {
+        if (!time12h) return ""; // Handle empty time
+
+        const [time, modifier] = time12h.split(" "); // Split time and AM/PM
+        let [hours, minutes] = time.split(":");
+
+        if (hours === "12") {
+          hours = "00"; // Handle 12 AM
+        }
+
+        if (modifier === "PM") {
+          hours = parseInt(hours, 10) + 12; // Convert to 24-hour format for PM
+        }
+
+        return `${hours}:${minutes}`; // Return in 24-hour format
+      }
+
+      // Function to fetch and render the schedule
+      async function fetchAndRenderSchedule() {
+        try {
+          const response = await fetch('/api/tasks');
+          if (!response.ok) {
+            throw new Error('Failed to fetch tasks');
+          }
+
+          const tasks = await response.json();
+          const taskTableBody = document.getElementById('taskTableBody');
+          taskTableBody.innerHTML = "";
+
+          tasks.forEach(({ name, time, _id }) => {
+            const newRow = document.createElement('tr');
+            newRow.dataset.taskId = _id; // Add task ID to the row
+            newRow.innerHTML = `
+              <td class="px-6 py-4">${name}</td>
+              <td class="px-6 py-4">${formatTime(time)}</td>
+              <td class="flex gap-2 px-6 py-4">
+                <button onclick="openEditTaskModal(this)" class="rounded-md border border-blue-600 px-2 py-1 text-blue-600 hover:bg-blue-100">Edit</button>
+                <button onclick="deleteTask('${_id}')" class="rounded-md border border-red-600 px-2 py-1 text-red-600 hover:bg-red-100">Delete</button>
+              </td>
+            `;
+            taskTableBody.appendChild(newRow);
+          });
+        } catch (err) {
+          console.error('Error fetching tasks:', err);
+          alert('Failed to load schedule. Please try again.');
+        }
+      }
+
+      // Fetch and render the schedule when the page loads
+      document.addEventListener('DOMContentLoaded', fetchAndRenderSchedule);
+
+      // Function to open the Add Task Modal
+      function openAddTaskModal() {
+        document.getElementById('addTaskModal').classList.remove('hidden');
+      }
+
+      // Function to close the Add Task Modal
+      function closeAddTaskModal() {
+        document.getElementById('addTaskModal').classList.add('hidden');
+        document.getElementById('taskName').value = ""; // Clear task name
+        document.getElementById('taskTime').value = ""; // Clear task time
+      }
+
+      // Function to add a new task
+      async function addTask() {
+        const taskName = document.getElementById('taskName').value;
+        const taskTime = document.getElementById('taskTime').value;
+
+        if (taskName && taskTime) {
+          try {
+            const response = await fetch('/api/tasks', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ name: taskName, time: taskTime }),
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to save task');
+            }
+
+            await fetchAndRenderSchedule();
+            closeAddTaskModal();
+          } catch (err) {
+            console.error('Error saving task:', err);
+            alert('Failed to save task. Please try again.');
+          }
+        } else {
+          alert('Please fill in both task name and time.');
+        }
+      }
+
+      // Function to open the Edit Task Modal
+      function openEditTaskModal(button) {
+        const row = button.closest('tr');
+        const taskName = row.cells[0].innerText;
+        const taskTime12h = row.cells[1].innerText;
+        const taskId = row.dataset.taskId;
+
+        // Convert 12-hour time to 24-hour time for the input field
+        const taskTime24h = convertTo24HourFormat(taskTime12h);
+
+        document.getElementById('editTaskName').value = taskName;
+        document.getElementById('editTaskTime').value = taskTime24h;
+        document.getElementById('editTaskModal').classList.remove('hidden');
+        document.getElementById('editTaskModal').dataset.taskId = taskId;
+      }
+
+      // Function to close the Edit Task Modal
+      function closeEditTaskModal() {
+        document.getElementById('editTaskModal').classList.add('hidden');
+      }
+
+      // Function to save the edited task
+      async function saveEditedTask() {
+        const taskName = document.getElementById('editTaskName').value;
+        const taskTime = document.getElementById('editTaskTime').value;
+        const taskId = document.getElementById('editTaskModal').dataset.taskId;
+
+        if (taskName && taskTime) {
+          try {
+            const response = await fetch(`/api/tasks/${taskId}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ name: taskName, time: taskTime }),
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to update task');
+            }
+
+            await fetchAndRenderSchedule();
+            closeEditTaskModal();
+          } catch (err) {
+            console.error('Error updating task:', err);
+            alert('Failed to update task. Please try again.');
+          }
+        } else {
+          alert('Please fill in both task name and time.');
+        }
+      }
+
+      // Function to delete a task
+      async function deleteTask(taskId) {
+        try {
+          const response = await fetch(`/api/tasks/${taskId}`, {
+            method: 'DELETE',
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to delete task');
+          }
+
+          await fetchAndRenderSchedule();
+        } catch (err) {
+          console.error('Error deleting task:', err);
+          alert('Failed to delete task. Please try again.');
+        }
+      }
+
+      // Function to collect all tasks and send them to the backend
+      function saveSchedule() {
+        const tasks = [];
+        const rows = document.querySelectorAll('#taskTableBody tr');
+
+        rows.forEach((row) => {
+          const taskName = row.cells[0].innerText;
+          const taskTime12h = row.cells[1].innerText; // Time in 12-hour format
+          const taskTime24h = convertTo24HourFormat(taskTime12h); // Convert to 24-hour format
+
+          tasks.push({ name: taskName, time: taskTime24h }); // Save in 24-hour format
+        });
+
+        // Send tasks to the backend
+        fetch('/api/save-schedule', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ tasks }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            alert('Schedule saved successfully!');
+          })
+          .catch((err) => {
+            console.error('Error saving schedule:', err);
+            alert('Failed to save schedule. Please try again.');
+          });
+      }
+
+      // Add event listener to the Save button
+      document.getElementById('saveButton').addEventListener('click', saveSchedule);
+    </script>
+  </body>
+</html>
