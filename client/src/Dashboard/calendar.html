@@ -146,48 +146,56 @@ function renderCalendar() {
 // Function to open the checklist modal and fetch tasks
 async function openChecklist(day) {
     const selectedDate = `${String(day).padStart(2, '0')}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${currentDate.getFullYear()}`;
-    modalTitle.textContent = `Day ${day} (${selectedDate})`; // Display the selected day and date
+    modalTitle.textContent = `Day ${day} (${selectedDate})`;
     tasksColumn.innerHTML = "";
     timeColumn.innerHTML = "";
 
     try {
-        // Fetch all tasks from the backend
         const response = await fetch('/api/tasks');
         if (!response.ok) {
             throw new Error('Failed to fetch tasks');
         }
 
         const tasks = await response.json();
+        console.log('Fetched tasks:', tasks); // Add this for debugging
 
-        // If no tasks are found, display a placeholder
         if (tasks.length === 0) {
             tasksColumn.innerHTML = "<li class='text-gray-600'>No tasks found.</li>";
             timeColumn.innerHTML = "<li class='text-gray-600'>-</li>";
             return;
         }
 
-        // Populate the checklist with tasks and times
-        tasks.forEach(({ name, time, completed, _id }) => {
+        tasks.forEach(task => {
             // Task Item
             const taskItem = document.createElement("li");
             taskItem.className = "flex items-center gap-2";
+            
+            // Check if completed is a Map-like object and has the date
+            const isCompleted = task.completed && task.completed[selectedDate];
+            
             taskItem.innerHTML = `
-                <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-500" ${completed.get(selectedDate) ? 'checked' : ''} data-task-id="${_id}">
-                <span class="text-gray-800 break-words">${name}</span>
+                <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-500" 
+                    ${isCompleted ? 'checked' : ''} 
+                    data-task-id="${task._id}">
+                <span class="text-gray-800 break-words">${task.name}</span>
             `;
             tasksColumn.appendChild(taskItem);
 
             // Time Item
             const timeItem = document.createElement("li");
             timeItem.className = "text-gray-600 break-words text-right";
-            timeItem.textContent = formatTime(time); // Format time in AM/PM
+            timeItem.textContent = formatTime(task.time);
             timeColumn.appendChild(timeItem);
 
             // Add event listener to the checkbox
             const checkbox = taskItem.querySelector('input[type="checkbox"]');
             checkbox.addEventListener('change', async () => {
-                const completed = checkbox.checked;
-                await updateTaskCompletionStatus(_id, completed, selectedDate);
+                try {
+                    await updateTaskCompletionStatus(task._id, checkbox.checked, selectedDate);
+                } catch (err) {
+                    console.error('Error updating completion status:', err);
+                    checkbox.checked = !checkbox.checked; // Revert the checkbox if update fails
+                }
             });
         });
     } catch (err) {
@@ -196,7 +204,7 @@ async function openChecklist(day) {
         timeColumn.innerHTML = "<li class='text-red-500'>-</li>";
     }
 
-    modalOverlay.style.display = "flex"; // Show modal
+    modalOverlay.style.display = "flex";
 }
 
 
