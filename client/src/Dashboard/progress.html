@@ -44,7 +44,10 @@
         <h4 id="yearLabel" class="text-center font-bold"></h4>
         <button id="nextYear" class="text-gray-600 hover:text-gray-900">Next Year &rarr;</button>
     </div>
-    <div id="heatmap" class="flex"></div>
+    <!-- Scrollable container for the heatmap -->
+    <div class="overflow-x-auto">
+        <div id="heatmap" class="flex"></div>
+    </div>
 </div>
 
     <footer class="bg-gray-200 text-black py-8">
@@ -170,7 +173,7 @@
             monthLabel.textContent = `${monthNames[month]} ${year}`;
         }
     
-        // Function to render the yearly heatmap
+     // Function to render the yearly heatmap
 async function renderYearlyHeatmap(year) {
     const startDate = new Date(year, 0, 1).toISOString().split('T')[0];
     const endDate = new Date(year, 11, 31).toISOString().split('T')[0];
@@ -185,7 +188,7 @@ async function renderYearlyHeatmap(year) {
         labelColumn.className = 'flex flex-col gap-1 mr-2';
         monthNames.forEach(month => {
             const label = document.createElement('div');
-            label.className = 'h-6 flex items-center text-sm text-gray-600'; // Adjusted height
+            label.className = 'h-4 flex items-center text-xs text-gray-600'; // Smaller font and height
             label.textContent = month;
             labelColumn.appendChild(label);
         });
@@ -210,7 +213,7 @@ async function renderYearlyHeatmap(year) {
                 const completionRate = completionData[dateKey] || 0;
                 
                 // Smaller box size
-                cell.className = `h-6 w-6 rounded-sm ${getHeatmapColor(completionRate)}`; // Adjusted height and width
+                cell.className = `h-4 w-4 rounded-sm ${getHeatmapColor(completionRate)}`; // Smaller height and width
                 cell.title = `${monthNames[month]} ${day}: ${completionRate.toFixed(1)}%`;
                 monthRow.appendChild(cell);
             }
