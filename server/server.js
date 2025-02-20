@@ -70,7 +70,6 @@ app.put('/api/tasks/:id', async (req, res) => {
     }
 });
 
-
 // Route to delete a task
 app.delete('/api/tasks/:id', async (req, res) => {
     const { id } = req.params;
@@ -80,6 +79,17 @@ app.delete('/api/tasks/:id', async (req, res) => {
         res.json({ message: 'Task deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: 'Failed to delete task' });
+    }
+});
+
+// Route to delete all tasks (entire schedule)
+app.delete('/api/tasks', async (req, res) => {
+    try {
+        // Delete all tasks from the collection
+        await Task.deleteMany({});
+        res.json({ message: 'All tasks deleted successfully. Schedule has been reset.' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete all tasks' });
     }
 });
 
@@ -102,16 +112,6 @@ app.post('/api/save-schedule', async (req, res) => {
         res.status(500).json({ error: 'Failed to save schedule' });
     }
 });
-
-/* Route to fetch all tasks
-app.get('/api/tasks', async (req, res) => {
-    try {
-        const tasks = await Task.find();
-        res.json(tasks);
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to fetch tasks' });
-    }
-});*/
 
 // Route to update task completion status for a specific date
 app.patch('/api/tasks/:id/complete', async (req, res) => {
@@ -137,7 +137,6 @@ app.patch('/api/tasks/:id/complete', async (req, res) => {
         res.status(500).json({ error: 'Failed to update task completion status' });
     }
 });
-
 
 // Start the server
 app.listen(PORT, () => {

@@ -48,10 +48,11 @@
       </div>
     </div>
 
-    <!-- Save Button -->
-    <div class="mb-4 flex justify-center">
-      <button id="saveButton" class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Save</button>
-    </div>
+    <!-- Save and Delete Buttons -->
+<div class="mb-4 flex justify-center gap-4">
+  <button id="saveButton" class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Save</button>
+  <button id="deleteScheduleButton" class="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700">Delete Schedule</button>
+</div>
 
     <!-- Footer -->
     <footer class="fixed bottom-0 mt-8 w-full bg-gray-200 py-4 text-center text-black">
@@ -300,6 +301,35 @@
 
       // Add event listener to the Save button
       document.getElementById('saveButton').addEventListener('click', saveSchedule);
+
+
+     // Function to delete the entire schedule
+async function deleteSchedule() {
+  const confirmDelete = confirm(
+    "⚠️ Warning: This will delete your entire schedule and reset all progress. Are you sure you want to continue?"
+  );
+  if (confirmDelete) {
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete schedule');
+      }
+
+      // Refresh the schedule table after deletion
+      await fetchAndRenderSchedule();
+      alert('Schedule deleted successfully! All progress has been reset.');
+    } catch (err) {
+      console.error('Error deleting schedule:', err);
+      alert('Failed to delete schedule. Please try again.');
+    }
+  }
+}
+
+// Add event listener to the Delete Schedule button
+document.getElementById('deleteScheduleButton').addEventListener('click', deleteSchedule);
     </script>
   </body>
 </html>

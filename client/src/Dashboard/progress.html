@@ -23,14 +23,25 @@
     </nav>
 
     <div class="max-w-6xl mx-auto px-4 py-8">
+        <!-- Weekly Progress Section -->
         <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
             <h2 class="text-2xl font-bold mb-4">Weekly Progress</h2>
+            <div class="flex items-center justify-between mb-4">
+                <button id="prevWeek" class="text-gray-600 hover:text-gray-900">&larr; Previous Week</button>
+                <span id="weekLabel" class="font-bold">Week 1</span>
+                <button id="nextWeek" class="text-gray-600 hover:text-gray-900">Next Week &rarr;</button>
+            </div>
             <canvas id="weeklyProgressChart"></canvas>
         </div>
 
+        <!-- Monthly Progress Heatmap Section -->
         <div class="bg-white p-6 rounded-lg shadow-lg">
             <h2 class="text-2xl font-bold mb-4">Monthly Progress Heatmap</h2>
-            <h4 id="monthLabel" class="text-center font-bold mb-4"></h4>
+            <div class="flex items-center justify-between mb-4">
+                <button id="prevMonth" class="text-gray-600 hover:text-gray-900">&larr; Previous Month</button>
+                <h4 id="monthLabel" class="text-center font-bold"></h4>
+                <button id="nextMonth" class="text-gray-600 hover:text-gray-900">Next Month &rarr;</button>
+            </div>
             <div id="heatmap" class="grid grid-cols-7 gap-1"></div>
         </div>
     </div>
@@ -42,51 +53,101 @@
     </footer>
 
     <script>
-        //Progress page script
-    // Bar Graph (Weekly Progress)
-    const weeklyProgressChart = new Chart(document.getElementById('weeklyProgressChart'), {
-        type: 'bar',
-        data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], // Days of the week
-            datasets: [{
-                label: 'Completion %',
-                data: [80, 60, 90, 70, 85, 50, 95], // Example data (replace with real data)
-                backgroundColor: 'rgba(59, 130, 246, 0.5)', // Blue color with transparency
-                borderColor: 'rgba(59, 130, 246, 1)', // Solid blue border
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: 'Completion %'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Days of the Week'
+        // Weekly Progress Chart
+        const weeklyProgressChart = new Chart(document.getElementById('weeklyProgressChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Completion %',
+                    data: [], // Initially empty
+                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Completion %'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Days of the Week'
+                        }
                     }
                 }
             }
-        }
-    });
-    
-        document.addEventListener("DOMContentLoaded", function () {
-            const heatmap = document.getElementById('heatmap');
-            const monthLabel = document.getElementById('monthLabel');
-            const currentDate = new Date();
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            monthLabel.textContent = `${monthNames[month]} ${year}`;
+        });
 
+        // Monthly Heatmap
+        const heatmap = document.getElementById('heatmap');
+        const monthLabel = document.getElementById('monthLabel');
+        const prevMonthButton = document.getElementById('prevMonth');
+        const nextMonthButton = document.getElementById('nextMonth');
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        let currentDate = new Date();
+        let currentYear = currentDate.getFullYear();
+        let currentMonth = currentDate.getMonth();
+
+        // Weekly Navigation
+        const weekLabel = document.getElementById('weekLabel');
+        const prevWeekButton = document.getElementById('prevWeek');
+        const nextWeekButton = document.getElementById('nextWeek');
+        let currentWeek = 1;
+        let weeksInMonth = [];
+
+        // Function to get weeks of a specific month
+        function getWeeksInMonth(year, month) {
+            const weeks = [];
+            const firstDayOfMonth = new Date(year, month, 1);
+            const lastDayOfMonth = new Date(year, month + 1, 0);
+            let currentWeekStart = new Date(firstDayOfMonth);
+
+            // Adjust to the start of the week (Monday)
+            while (currentWeekStart.getDay() !== 1) {
+                currentWeekStart.setDate(currentWeekStart.getDate() - 1);
+            }
+
+            while (currentWeekStart <= lastDayOfMonth) {
+                const weekEnd = new Date(currentWeekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+
+                weeks.push({
+                    start: new Date(currentWeekStart),
+                    end: new Date(weekEnd)
+                });
+
+                currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+            }
+
+            return weeks;
+        }
+
+        // Function to update the weekly chart
+        function updateWeeklyChart(weekIndex) {
+            const week = weeksInMonth[weekIndex];
+            const weekData = Array.from({ length: 7 }, (_, i) => {
+                const day = new Date(week.start);
+                day.setDate(day.getDate() + i);
+                return day.getMonth() === currentMonth ? Math.floor(Math.random() * 100) : 0; // Only show data for days in the current month
+            });
+
+            weeklyProgressChart.data.datasets[0].data = weekData;
+            weeklyProgressChart.update();
+            weekLabel.textContent = `Week ${weekIndex + 1} (${week.start.toLocaleDateString()} - ${week.end.toLocaleDateString()})`;
+        }
+
+        // Function to render the heatmap
+        function renderHeatmap(year, month) {
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            heatmap.innerHTML = ""; 
+            heatmap.innerHTML = "";
             const heatmapData = Array.from({ length: daysInMonth }, () => Math.floor(Math.random() * 100));
 
             heatmapData.forEach((value, index) => {
@@ -95,8 +156,16 @@
                 cell.title = `Day ${index + 1}: ${value}%`;
                 heatmap.appendChild(cell);
             });
-        });
 
+            monthLabel.textContent = `${monthNames[month]} ${year}`;
+
+            // Update weeks for the selected month
+            weeksInMonth = getWeeksInMonth(year, month);
+            currentWeek = 0;
+            updateWeeklyChart(currentWeek);
+        }
+
+        // Function to get heatmap color
         function getHeatmapColor(value) {
             if (value === 0) return 'bg-gray-200';
             if (value <= 25) return 'bg-blue-100';
@@ -104,6 +173,43 @@
             if (value <= 75) return 'bg-blue-500';
             return 'bg-blue-700';
         }
+
+        // Event listeners for month navigation
+        prevMonthButton.addEventListener('click', () => {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderHeatmap(currentYear, currentMonth);
+        });
+
+        nextMonthButton.addEventListener('click', () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderHeatmap(currentYear, currentMonth);
+        });
+
+        // Event listeners for week navigation
+        prevWeekButton.addEventListener('click', () => {
+            if (currentWeek > 0) {
+                currentWeek--;
+                updateWeeklyChart(currentWeek);
+            }
+        });
+
+        nextWeekButton.addEventListener('click', () => {
+            if (currentWeek < weeksInMonth.length - 1) {
+                currentWeek++;
+                updateWeeklyChart(currentWeek);
+            }
+        });
+
+        // Initial render
+        renderHeatmap(currentYear, currentMonth);
     </script>
 </body>
 </html>
