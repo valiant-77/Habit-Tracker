@@ -23,28 +23,29 @@
     </nav>
 
     <div class="max-w-6xl mx-auto px-4 py-8">
-        <!-- Weekly Progress Section -->
-        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
-            <h2 class="text-2xl font-bold mb-4">Weekly Progress</h2>
-            <div class="flex items-center justify-between mb-4">
-                <button id="prevWeek" class="text-gray-600 hover:text-gray-900">&larr; Previous Week</button>
-                <span id="weekLabel" class="font-bold">Week 1</span>
-                <button id="nextWeek" class="text-gray-600 hover:text-gray-900">Next Week &rarr;</button>
-            </div>
-            <canvas id="weeklyProgressChart"></canvas>
-        </div>
-
-        <!-- Monthly Progress Heatmap Section -->
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-            <h2 class="text-2xl font-bold mb-4">Monthly Progress Heatmap</h2>
-            <div class="flex items-center justify-between mb-4">
-                <button id="prevMonth" class="text-gray-600 hover:text-gray-900">&larr; Previous Month</button>
-                <h4 id="monthLabel" class="text-center font-bold"></h4>
-                <button id="nextMonth" class="text-gray-600 hover:text-gray-900">Next Month &rarr;</button>
-            </div>
-            <div id="heatmap" class="grid grid-cols-7 gap-1"></div>
-        </div>
+  <!-- Monthly Progress Section -->
+<div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+    <h2 class="text-2xl font-bold mb-4">Monthly Progress</h2>
+    <div class="flex items-center justify-between mb-4">
+        <button id="prevMonth" class="text-gray-600 hover:text-gray-900">&larr; Previous Month</button>
+        <h4 id="monthLabel" class="text-center font-bold"></h4>
+        <button id="nextMonth" class="text-gray-600 hover:text-gray-900">Next Month &rarr;</button>
     </div>
+    <div style="height: 400px;">
+        <canvas id="weeklyProgressChart"></canvas>
+    </div>
+</div>
+
+ <!-- Yearly Progress Heatmap Section -->
+<div class="bg-white p-6 rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold mb-4">Yearly Progress Heatmap</h2>
+    <div class="flex items-center justify-between mb-4">
+        <button id="prevYear" class="text-gray-600 hover:text-gray-900">&larr; Previous Year</button>
+        <h4 id="yearLabel" class="text-center font-bold"></h4>
+        <button id="nextYear" class="text-gray-600 hover:text-gray-900">Next Year &rarr;</button>
+    </div>
+    <div id="heatmap" class="flex"></div>
+</div>
 
     <footer class="bg-gray-200 text-black py-8">
         <div class="max-w-6xl mx-auto px-4 text-center">
@@ -53,20 +54,36 @@
     </footer>
 
     <script>
-        // Weekly Progress Chart
-        const weeklyProgressChart = new Chart(document.getElementById('weeklyProgressChart'), {
+        // Function to fetch completion rates for a date range
+        async function fetchCompletionRates(startDate, endDate) {
+            try {
+                const response = await fetch(`/api/completion-rates?startDate=${startDate}&endDate=${endDate}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch completion rates');
+                }
+                return await response.json();
+            } catch (err) {
+                console.error('Error fetching completion rates:', err);
+                return null;
+            }
+        }
+    
+        // Monthly Progress Chart
+        const monthlyProgressChart = new Chart(document.getElementById('weeklyProgressChart'), {
             type: 'bar',
             data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                labels: [], // Will be filled with days of the month
                 datasets: [{
                     label: 'Completion %',
-                    data: [], // Initially empty
+                    data: [], // Will be filled with completion rates
                     backgroundColor: 'rgba(59, 130, 246, 0.5)',
                     borderColor: 'rgba(59, 130, 246, 1)',
                     borderWidth: 1
                 }]
             },
             options: {
+                responsive: true,
+                maintainAspectRatio: false,
                 scales: {
                     y: {
                         beginAtZero: true,
@@ -79,93 +96,49 @@
                     x: {
                         title: {
                             display: true,
-                            text: 'Days of the Week'
+                            text: 'Days of the Month'
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                const dayNum = parseInt(tooltipItems[0].label);
+                                const date = new Date(currentYear, currentMonth, dayNum);
+                                return date.toLocaleDateString('en-US', { 
+                                    weekday: 'long', 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                });
+                            }
                         }
                     }
                 }
             }
         });
-
-        // Monthly Heatmap
-        const heatmap = document.getElementById('heatmap');
-        const monthLabel = document.getElementById('monthLabel');
-        const prevMonthButton = document.getElementById('prevMonth');
-        const nextMonthButton = document.getElementById('nextMonth');
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    
+        // Shared variables
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         let currentDate = new Date();
         let currentYear = currentDate.getFullYear();
         let currentMonth = currentDate.getMonth();
-
-        // Weekly Navigation
-        const weekLabel = document.getElementById('weekLabel');
-        const prevWeekButton = document.getElementById('prevWeek');
-        const nextWeekButton = document.getElementById('nextWeek');
-        let currentWeek = 1;
-        let weeksInMonth = [];
-
-        // Function to get weeks of a specific month
-        function getWeeksInMonth(year, month) {
-            const weeks = [];
-            const firstDayOfMonth = new Date(year, month, 1);
-            const lastDayOfMonth = new Date(year, month + 1, 0);
-            let currentWeekStart = new Date(firstDayOfMonth);
-
-            // Adjust to the start of the week (Monday)
-            while (currentWeekStart.getDay() !== 1) {
-                currentWeekStart.setDate(currentWeekStart.getDate() - 1);
-            }
-
-            while (currentWeekStart <= lastDayOfMonth) {
-                const weekEnd = new Date(currentWeekStart);
-                weekEnd.setDate(weekEnd.getDate() + 6);
-
-                weeks.push({
-                    start: new Date(currentWeekStart),
-                    end: new Date(weekEnd)
-                });
-
-                currentWeekStart.setDate(currentWeekStart.getDate() + 7);
-            }
-
-            return weeks;
-        }
-
-        // Function to update the weekly chart
-        function updateWeeklyChart(weekIndex) {
-            const week = weeksInMonth[weekIndex];
-            const weekData = Array.from({ length: 7 }, (_, i) => {
-                const day = new Date(week.start);
-                day.setDate(day.getDate() + i);
-                return day.getMonth() === currentMonth ? Math.floor(Math.random() * 100) : 0; // Only show data for days in the current month
-            });
-
-            weeklyProgressChart.data.datasets[0].data = weekData;
-            weeklyProgressChart.update();
-            weekLabel.textContent = `Week ${weekIndex + 1} (${week.start.toLocaleDateString()} - ${week.end.toLocaleDateString()})`;
-        }
-
-        // Function to render the heatmap
-        function renderHeatmap(year, month) {
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            heatmap.innerHTML = "";
-            const heatmapData = Array.from({ length: daysInMonth }, () => Math.floor(Math.random() * 100));
-
-            heatmapData.forEach((value, index) => {
-                const cell = document.createElement('div');
-                cell.className = `h-8 w-8 rounded-sm ${getHeatmapColor(value)}`;
-                cell.title = `Day ${index + 1}: ${value}%`;
-                heatmap.appendChild(cell);
-            });
-
-            monthLabel.textContent = `${monthNames[month]} ${year}`;
-
-            // Update weeks for the selected month
-            weeksInMonth = getWeeksInMonth(year, month);
-            currentWeek = 0;
-            updateWeeklyChart(currentWeek);
-        }
-
-        // Function to get heatmap color
+    
+        // DOM Elements
+        const heatmap = document.getElementById('heatmap');
+        const monthLabel = document.getElementById('monthLabel');
+        const yearLabel = document.getElementById('yearLabel');
+        const prevMonthButton = document.getElementById('prevMonth');
+        const nextMonthButton = document.getElementById('nextMonth');
+        const prevYearButton = document.getElementById('prevYear');
+        const nextYearButton = document.getElementById('nextYear');
+    
+        // Function to get heatmap color based on completion percentage
         function getHeatmapColor(value) {
             if (value === 0) return 'bg-gray-200';
             if (value <= 25) return 'bg-blue-100';
@@ -173,7 +146,85 @@
             if (value <= 75) return 'bg-blue-500';
             return 'bg-blue-700';
         }
+    
+        // Function to update the monthly chart with real data
+        async function updateMonthlyChart(year, month) {
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const startDate = new Date(year, month, 1).toISOString().split('T')[0];
+            const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
+            
+            const completionData = await fetchCompletionRates(startDate, endDate);
+            
+            if (completionData) {
+                const labels = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+                const data = labels.map(day => {
+                    const dateKey = `${String(day).padStart(2, '0')}-${String(month + 1).padStart(2, '0')}-${year}`;
+                    return completionData[dateKey] || 0;
+                });
+    
+                monthlyProgressChart.data.labels = labels;
+                monthlyProgressChart.data.datasets[0].data = data;
+                monthlyProgressChart.update();
+            }
+            
+            monthLabel.textContent = `${monthNames[month]} ${year}`;
+        }
+    
+        // Function to render the yearly heatmap
+async function renderYearlyHeatmap(year) {
+    const startDate = new Date(year, 0, 1).toISOString().split('T')[0];
+    const endDate = new Date(year, 11, 31).toISOString().split('T')[0];
+    
+    const completionData = await fetchCompletionRates(startDate, endDate);
+    
+    if (completionData) {
+        heatmap.innerHTML = "";
+        
+        // Create month labels column
+        const labelColumn = document.createElement('div');
+        labelColumn.className = 'flex flex-col gap-1 mr-2';
+        monthNames.forEach(month => {
+            const label = document.createElement('div');
+            label.className = 'h-6 flex items-center text-sm text-gray-600'; // Adjusted height
+            label.textContent = month;
+            labelColumn.appendChild(label);
+        });
+        heatmap.appendChild(labelColumn);
 
+        // Create main heatmap grid
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'flex flex-col gap-1 flex-grow';
+
+        // Create rows for each month
+        for (let month = 0; month < 12; month++) {
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Create a row for the month
+            const monthRow = document.createElement('div');
+            monthRow.className = 'flex gap-1';
+
+            // Create cells for each day of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const cell = document.createElement('div');
+                const dateKey = `${String(day).padStart(2, '0')}-${String(month + 1).padStart(2, '0')}-${year}`;
+                const completionRate = completionData[dateKey] || 0;
+                
+                // Smaller box size
+                cell.className = `h-6 w-6 rounded-sm ${getHeatmapColor(completionRate)}`; // Adjusted height and width
+                cell.title = `${monthNames[month]} ${day}: ${completionRate.toFixed(1)}%`;
+                monthRow.appendChild(cell);
+            }
+
+            // Append the month row to the grid container
+            gridContainer.appendChild(monthRow);
+        }
+        
+        heatmap.appendChild(gridContainer);
+    }
+
+    yearLabel.textContent = `Year ${year}`;
+}
+    
         // Event listeners for month navigation
         prevMonthButton.addEventListener('click', () => {
             currentMonth--;
@@ -181,35 +232,34 @@
                 currentMonth = 11;
                 currentYear--;
             }
-            renderHeatmap(currentYear, currentMonth);
+            updateMonthlyChart(currentYear, currentMonth);
         });
-
+    
         nextMonthButton.addEventListener('click', () => {
             currentMonth++;
             if (currentMonth > 11) {
                 currentMonth = 0;
                 currentYear++;
             }
-            renderHeatmap(currentYear, currentMonth);
+            updateMonthlyChart(currentYear, currentMonth);
         });
-
-        // Event listeners for week navigation
-        prevWeekButton.addEventListener('click', () => {
-            if (currentWeek > 0) {
-                currentWeek--;
-                updateWeeklyChart(currentWeek);
-            }
+    
+        // Event listeners for year navigation
+        prevYearButton.addEventListener('click', () => {
+            currentYear--;
+            renderYearlyHeatmap(currentYear);
+            updateMonthlyChart(currentYear, currentMonth);
         });
-
-        nextWeekButton.addEventListener('click', () => {
-            if (currentWeek < weeksInMonth.length - 1) {
-                currentWeek++;
-                updateWeeklyChart(currentWeek);
-            }
+    
+        nextYearButton.addEventListener('click', () => {
+            currentYear++;
+            renderYearlyHeatmap(currentYear);
+            updateMonthlyChart(currentYear, currentMonth);
         });
-
+    
         // Initial render
-        renderHeatmap(currentYear, currentMonth);
+        updateMonthlyChart(currentYear, currentMonth);
+        renderYearlyHeatmap(currentYear);
     </script>
 </body>
 </html>

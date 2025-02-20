@@ -138,6 +138,58 @@ app.patch('/api/tasks/:id/complete', async (req, res) => {
     }
 });
 
+
+// Route to get completion rates for a date range
+app.get('/api/completion-rates', async (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+        return res.status(400).json({ error: 'Start date and end date are required' });
+    }
+
+    try {
+        // Get all tasks
+        const tasks = await Task.find();
+        
+        // Create a map to store completion rates for each date
+        const completionRates = {};
+        
+        // Convert dates to the format used in the database (DD-MM-YYYY)
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        // Iterate through each date in the range
+        for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+            const dateKey = `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
+            
+            // Count completed tasks for this date
+            let completedCount = 0;
+            let totalTasks = tasks.length;
+            
+            // Skip dates with no tasks
+            if (totalTasks === 0) {
+                completionRates[dateKey] = 0;
+                continue;
+            }
+            
+            // Check completion status for each task
+            tasks.forEach(task => {
+                if (task.completed && task.completed.get(dateKey)) {
+                    completedCount++;
+                }
+            });
+            
+            // Calculate completion rate as percentage
+            completionRates[dateKey] = (completedCount / totalTasks) * 100;
+        }
+        
+        res.json(completionRates);
+    } catch (err) {
+        console.error('Error fetching completion rates:', err);
+        res.status(500).json({ error: 'Failed to fetch completion rates' });
+    }
+});
+
 // Start the server
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
