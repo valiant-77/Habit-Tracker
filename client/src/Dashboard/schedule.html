@@ -49,10 +49,10 @@
     </div>
 
     <!-- Save and Delete Buttons -->
-<div class="mb-4 flex justify-center gap-4">
-  <button id="saveButton" class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Save</button>
-  <button id="deleteScheduleButton" class="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700">Delete Schedule</button>
-</div>
+    <div class="mb-4 flex justify-center gap-4">
+      <button id="saveButton" class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Save</button>
+      <button id="deleteScheduleButton" class="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700">Delete Schedule</button>
+    </div>
 
     <!-- Footer -->
     <footer class="fixed bottom-0 mt-8 w-full bg-gray-200 py-4 text-center text-black">
@@ -88,48 +88,39 @@
     </div>
 
     <script>
+      const token = localStorage.getItem('token');
+
       // Helper function to format time in AM/PM
       function formatTime(time) {
         if (!time) return ""; // Handle empty time
-
-        // Split the time into hours and minutes
         const [hours, minutes] = time.split(":");
-
-        // Convert hours to 12-hour format
         let formattedHours = parseInt(hours, 10);
         const ampm = formattedHours >= 12 ? "PM" : "AM";
         formattedHours = formattedHours % 12 || 12; // Convert 0 to 12
-
-        // Return formatted time (e.g., "1:00 PM")
         return `${formattedHours}:${minutes} ${ampm}`;
       }
 
       // Helper function to convert 12-hour time to 24-hour time
       function convertTo24HourFormat(time12h) {
         if (!time12h) return ""; // Handle empty time
-
         const [time, modifier] = time12h.split(" "); // Split time and AM/PM
         let [hours, minutes] = time.split(":");
-
-        if (hours === "12") {
-          hours = "00"; // Handle 12 AM
-        }
-
-        if (modifier === "PM") {
-          hours = parseInt(hours, 10) + 12; // Convert to 24-hour format for PM
-        }
-
+        if (hours === "12") hours = "00"; // Handle 12 AM
+        if (modifier === "PM") hours = parseInt(hours, 10) + 12; // Convert to 24-hour format for PM
         return `${hours}:${minutes}`; // Return in 24-hour format
       }
 
       // Function to fetch and render the schedule
       async function fetchAndRenderSchedule() {
         try {
-          const response = await fetch('/api/tasks');
+          const response = await fetch('/api/tasks', {
+            headers: {
+              'Authorization': token, // Add the token
+            },
+          });
           if (!response.ok) {
             throw new Error('Failed to fetch tasks');
           }
-
           const tasks = await response.json();
           const taskTableBody = document.getElementById('taskTableBody');
           taskTableBody.innerHTML = "";
@@ -179,6 +170,7 @@
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
+                'Authorization': token, // Add the token
               },
               body: JSON.stringify({ name: taskName, time: taskTime }),
             });
@@ -231,6 +223,7 @@
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
+                'Authorization': token, // Add the token
               },
               body: JSON.stringify({ name: taskName, time: taskTime }),
             });
@@ -255,6 +248,9 @@
         try {
           const response = await fetch(`/api/tasks/${taskId}`, {
             method: 'DELETE',
+            headers: {
+              'Authorization': token, // Add the token
+            },
           });
 
           if (!response.ok) {
@@ -268,8 +264,8 @@
         }
       }
 
-      // Function to collect all tasks and send them to the backend
-      function saveSchedule() {
+      // Function to save the schedule
+      async function saveSchedule() {
         const tasks = [];
         const rows = document.querySelectorAll('#taskTableBody tr');
 
@@ -281,55 +277,61 @@
           tasks.push({ name: taskName, time: taskTime24h }); // Save in 24-hour format
         });
 
-        // Send tasks to the backend
-        fetch('/api/save-schedule', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ tasks }),
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            alert('Schedule saved successfully!');
-          })
-          .catch((err) => {
-            console.error('Error saving schedule:', err);
-            alert('Failed to save schedule. Please try again.');
+        try {
+          // Send tasks to the backend
+          const response = await fetch('/api/tasks/save', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token, // Add the token
+            },
+            body: JSON.stringify({ tasks }),
           });
+
+          if (!response.ok) {
+            throw new Error('Failed to save schedule');
+          }
+
+          const data = await response.json();
+          alert('Schedule saved successfully!');
+        } catch (err) {
+          console.error('Error saving schedule:', err);
+          alert('Failed to save schedule. Please try again.');
+        }
       }
 
       // Add event listener to the Save button
       document.getElementById('saveButton').addEventListener('click', saveSchedule);
 
+      // Function to delete the entire schedule
+      async function deleteSchedule() {
+        const confirmDelete = confirm(
+          "⚠️ Warning: This will delete your entire schedule and reset all progress. Are you sure you want to continue?"
+        );
+        if (confirmDelete) {
+          try {
+            const response = await fetch('/api/tasks', {
+              method: 'DELETE',
+              headers: {
+                'Authorization': token, // Add the token
+              },
+            });
 
-     // Function to delete the entire schedule
-async function deleteSchedule() {
-  const confirmDelete = confirm(
-    "⚠️ Warning: This will delete your entire schedule and reset all progress. Are you sure you want to continue?"
-  );
-  if (confirmDelete) {
-    try {
-      const response = await fetch('/api/tasks', {
-        method: 'DELETE',
-      });
+            if (!response.ok) {
+              throw new Error('Failed to delete schedule');
+            }
 
-      if (!response.ok) {
-        throw new Error('Failed to delete schedule');
+            await fetchAndRenderSchedule();
+            alert('Schedule deleted successfully! All progress has been reset.');
+          } catch (err) {
+            console.error('Error deleting schedule:', err);
+            alert('Failed to delete schedule. Please try again.');
+          }
+        }
       }
 
-      // Refresh the schedule table after deletion
-      await fetchAndRenderSchedule();
-      alert('Schedule deleted successfully! All progress has been reset.');
-    } catch (err) {
-      console.error('Error deleting schedule:', err);
-      alert('Failed to delete schedule. Please try again.');
-    }
-  }
-}
-
-// Add event listener to the Delete Schedule button
-document.getElementById('deleteScheduleButton').addEventListener('click', deleteSchedule);
+      // Add event listener to the Delete Schedule button
+      document.getElementById('deleteScheduleButton').addEventListener('click', deleteSchedule);
     </script>
   </body>
 </html>

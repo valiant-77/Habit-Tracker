@@ -16,11 +16,16 @@
                     <span class="text-xl font-bold text-gray-800">HabitTracker</span>
                 </div>
                 <div class="flex items-center">
-                    <a href="../index.html" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300">Logout</a>
+                    <a href="#" id="logoutButton" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300">Logout</a>
                 </div>
             </div>
         </div>
     </nav>
+
+    <!-- Loading State -->
+    <div id="loading" class="text-center py-4">
+        <p>Loading...</p>
+    </div>
 
     <!-- Dashboard Cards -->
     <div class="min-h-screen flex items-center justify-center">
@@ -75,5 +80,47 @@
             <p>&copy; 2023 HabitTracker. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Check if the user is authenticated
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '../login.html';
+        }
+
+        // Logout functionality
+        document.getElementById('logoutButton').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = '../login.html';
+        });
+
+        // Fetch user data
+        async function fetchUserData() {
+            try {
+                const response = await fetch('/api/user', {
+                    headers: {
+                        'Authorization': token,
+                    },
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        window.location.href = '../login.html';
+                    }
+                    throw new Error('Failed to fetch user data');
+                }
+
+                const userData = await response.json();
+                document.querySelector('h1').textContent = `Welcome, ${userData.username}!`;
+                document.getElementById('loading').style.display = 'none';
+            } catch (err) {
+                console.error('Error fetching user data:', err);
+            }
+        }
+
+        fetchUserData();
+    </script>
 </body>
 </html>

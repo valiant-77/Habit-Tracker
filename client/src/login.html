@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login/Signup - HabitTracker</title>
+    <title>Login - HabitTracker</title>
     <link href="./css/style.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -22,17 +22,17 @@
         </div>
     </nav>
 
-    <!-- Login/Signup Form -->
+    <!-- Login Form -->
     <div class="min-h-screen flex items-center justify-center">
         <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
             <h2 class="text-2xl font-bold text-center mb-6">Welcome Back!</h2>
-            <form>
-                <!-- Email Input -->
+            <form id="loginForm">
+                <!-- Username Input -->
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="email">Username</label>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="username">Username</label>
                     <input
-                        type="email"
-                        id="email"
+                        type="text"
+                        id="username"
                         class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Enter your username"
                         required
@@ -40,7 +40,7 @@
                 </div>
 
                 <!-- Password Input -->
-                <div class="mb-6">
+                <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Password</label>
                     <input
                         type="password"
@@ -49,6 +49,16 @@
                         placeholder="Enter your password"
                         required
                     />
+                </div>
+
+                <!-- Remember Me Checkbox -->
+                <div class="mb-4 flex items-center">
+                    <input
+                        type="checkbox"
+                        id="rememberMe"
+                        class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <label for="rememberMe" class="ml-2 text-sm text-gray-700">Remember Me</label>
                 </div>
 
                 <!-- Login Button -->
@@ -74,5 +84,64 @@
             <p>&copy; 2023 HabitTracker. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- JavaScript for Login Form -->
+    <script>
+        // Check if credentials are stored in localStorage
+        const savedUsername = localStorage.getItem('rememberMeUsername');
+        const savedPassword = localStorage.getItem('rememberMePassword');
+
+        if (savedUsername && savedPassword) {
+            // Auto-fill the form if credentials are found
+            document.getElementById('username').value = savedUsername;
+            document.getElementById('password').value = savedPassword;
+            document.getElementById('rememberMe').checked = true;
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent default form submission
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+
+            try {
+                // Send login request to the backend
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Save the JWT token in localStorage
+                    localStorage.setItem('token', data.token);
+
+                    // Save credentials in localStorage if "Remember Me" is checked
+                    if (rememberMe) {
+                        localStorage.setItem('rememberMeUsername', username);
+                        localStorage.setItem('rememberMePassword', password);
+                    } else {
+                        // Clear saved credentials if "Remember Me" is not checked
+                        localStorage.removeItem('rememberMeUsername');
+                        localStorage.removeItem('rememberMePassword');
+                    }
+
+                    // Redirect to the dashboard
+                    window.location.href = './Dashboard/dashboard.html';
+                } else {
+                    // Display error message
+                    alert(data.error || 'Login failed. Please try again.');
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                alert('An error occurred. Please try again.');
+            }
+        });
+    </script>
 </body>
 </html>

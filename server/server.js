@@ -1,6 +1,8 @@
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const app = express();
 const PORT = 3000;
 
@@ -13,31 +15,128 @@ mongoose.connect('mongodb://localhost:27017/habitTracker', {
 .then(() => console.log('Connected to MongoDB'))
 .catch((err) => console.error('Failed to connect to MongoDB', err));
 
-// Define a Task schema
+// Middleware to parse JSON
+app.use(express.json());
+
+// Define the User schema
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+});
+
+// Create the User model
+const User = mongoose.model('User', userSchema);
+
+// Define the Task schema
 const taskSchema = new mongoose.Schema({
     name: { type: String, required: true },
     time: { type: String, required: true },
     completed: { type: Map, of: Boolean, default: {} }, // Track completion per date
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Associate task with user
 });
 
-// Create a Task model
+// Create the Task model
 const Task = mongoose.model('Task', taskSchema);
 
-// Middleware to parse JSON
-app.use(express.json());
+// Authentication middleware
+const authenticate = (req, res, next) => {
+    const token = req.header('Authorization');
 
-// Route to fetch tasks
-app.get('/api/tasks', async (req, res) => {
+    if (!token) {
+        return res.status(401).json({ error: 'Access denied. No token provided.' });
+    }
+
     try {
-        const tasks = await Task.find();
+        // Verify the token
+        const decoded = jwt.verify(token, 'your-secret-key');
+        req.user = decoded;
+        next();
+    } catch (err) {
+        res.status(400).json({ error: 'Invalid token.' });
+    }
+};
+
+// Route to register a new user
+app.post('/api/register', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        // Check if the username already exists
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.status(400).json({ error: 'Username already exists' });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create a new user
+        const newUser = new User({ username, password: hashedPassword });
+        await newUser.save();
+
+        // Return success response
+        res.status(201).json({ message: 'User registered successfully' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to register user' });
+    }
+});
+
+// Route to login a user
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        // Find the user by username
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(400).json({ error: 'Invalid username or password' });
+        }
+
+        // Compare the provided password with the hashed password
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) {
+            return res.status(400).json({ error: 'Invalid username or password' });
+        }
+
+        // Generate a JWT token
+        const token = jwt.sign({ _id: user._id }, 'your-secret-key', { expiresIn: '1h' });
+
+        // Return the token
+        res.json({ token });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to login' });
+    }
+});
+
+// Route to fetch user data
+app.get('/api/user', authenticate, async (req, res) => {
+    try {
+        // Find the user by ID and exclude the password field
+        const user = await User.findById(req.user._id).select('-password');
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Return the user data
+        res.json(user);
+    } catch (err) {
+        console.error('Error fetching user data:', err);
+        res.status(500).json({ error: 'Failed to fetch user data' });
+    }
+});
+
+// Route to fetch tasks for the authenticated user
+app.get('/api/tasks', authenticate, async (req, res) => {
+    try {
+        const tasks = await Task.find({ user: req.user._id });
         res.json(tasks);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch tasks' });
     }
 });
 
-// Route to add a new task
-app.post('/api/tasks', async (req, res) => {
+// Route to add a new task for the authenticated user
+app.post('/api/tasks', authenticate, async (req, res) => {
     const { name, time } = req.body;
 
     if (!name || !time) {
@@ -45,7 +144,7 @@ app.post('/api/tasks', async (req, res) => {
     }
 
     try {
-        const newTask = new Task({ name, time });
+        const newTask = new Task({ name, time, user: req.user._id });
         await newTask.save();
         res.status(201).json(newTask);
     } catch (err) {
@@ -53,8 +152,8 @@ app.post('/api/tasks', async (req, res) => {
     }
 });
 
-// Route to update a task
-app.put('/api/tasks/:id', async (req, res) => {
+// Route to update a task for the authenticated user
+app.put('/api/tasks/:id', authenticate, async (req, res) => {
     const { id } = req.params;
     const { name, time } = req.body;
 
@@ -63,38 +162,41 @@ app.put('/api/tasks/:id', async (req, res) => {
     }
 
     try {
-        const updatedTask = await Task.findByIdAndUpdate(id, { name, time }, { new: true });
+        const updatedTask = await Task.findOneAndUpdate(
+            { _id: id, user: req.user._id }, // Ensure the task belongs to the user
+            { name, time },
+            { new: true }
+        );
+
+        if (!updatedTask) {
+            return res.status(404).json({ error: 'Task not found' });
+        }
+
         res.json(updatedTask);
     } catch (err) {
         res.status(500).json({ error: 'Failed to update task' });
     }
 });
 
-// Route to delete a task
-app.delete('/api/tasks/:id', async (req, res) => {
+// Route to delete a task for the authenticated user
+app.delete('/api/tasks/:id', authenticate, async (req, res) => {
     const { id } = req.params;
 
     try {
-        await Task.findByIdAndDelete(id);
+        const deletedTask = await Task.findOneAndDelete({ _id: id, user: req.user._id });
+
+        if (!deletedTask) {
+            return res.status(404).json({ error: 'Task not found' });
+        }
+
         res.json({ message: 'Task deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: 'Failed to delete task' });
     }
 });
 
-// Route to delete all tasks (entire schedule)
-app.delete('/api/tasks', async (req, res) => {
-    try {
-        // Delete all tasks from the collection
-        await Task.deleteMany({});
-        res.json({ message: 'All tasks deleted successfully. Schedule has been reset.' });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to delete all tasks' });
-    }
-});
-
-// Route to save the entire schedule
-app.post('/api/save-schedule', async (req, res) => {
+// Route to save multiple tasks
+app.post('/api/tasks/save', authenticate, async (req, res) => {
     const { tasks } = req.body;
 
     if (!tasks || !Array.isArray(tasks)) {
@@ -102,19 +204,37 @@ app.post('/api/save-schedule', async (req, res) => {
     }
 
     try {
-        // Delete existing tasks (optional, if you want to replace the entire schedule)
-        await Task.deleteMany({});
+        // Delete existing tasks for the user
+        await Task.deleteMany({ user: req.user._id });
 
-        // Insert new tasks
-        const savedTasks = await Task.insertMany(tasks);
-        res.status(201).json(savedTasks);
+        // Save new tasks
+        const newTasks = tasks.map(task => ({
+            name: task.name,
+            time: task.time,
+            user: req.user._id,
+        }));
+
+        await Task.insertMany(newTasks);
+
+        res.json({ message: 'Schedule saved successfully' });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to save schedule' });
+        console.error('Error saving tasks:', err);
+        res.status(500).json({ error: 'Failed to save tasks' });
+    }
+});
+
+// Route to delete all tasks for the authenticated user
+app.delete('/api/tasks', authenticate, async (req, res) => {
+    try {
+        await Task.deleteMany({ user: req.user._id });
+        res.json({ message: 'All tasks deleted successfully. Schedule has been reset.' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete all tasks' });
     }
 });
 
 // Route to update task completion status for a specific date
-app.patch('/api/tasks/:id/complete', async (req, res) => {
+app.patch('/api/tasks/:id/complete', authenticate, async (req, res) => {
     const { id } = req.params;
     const { completed, date } = req.body;
 
@@ -123,7 +243,8 @@ app.patch('/api/tasks/:id/complete', async (req, res) => {
     }
 
     try {
-        const task = await Task.findById(id);
+        const task = await Task.findOne({ _id: id, user: req.user._id });
+
         if (!task) {
             return res.status(404).json({ error: 'Task not found' });
         }
@@ -138,9 +259,8 @@ app.patch('/api/tasks/:id/complete', async (req, res) => {
     }
 });
 
-
-// Route to get completion rates for a date range
-app.get('/api/completion-rates', async (req, res) => {
+// Route to get completion rates for a date range for the authenticated user
+app.get('/api/completion-rates', authenticate, async (req, res) => {
     const { startDate, endDate } = req.query;
 
     if (!startDate || !endDate) {
@@ -148,41 +268,41 @@ app.get('/api/completion-rates', async (req, res) => {
     }
 
     try {
-        // Get all tasks
-        const tasks = await Task.find();
-        
+        // Get all tasks for the authenticated user
+        const tasks = await Task.find({ user: req.user._id });
+
         // Create a map to store completion rates for each date
         const completionRates = {};
-        
+
         // Convert dates to the format used in the database (DD-MM-YYYY)
         const start = new Date(startDate);
         const end = new Date(endDate);
-        
+
         // Iterate through each date in the range
         for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
             const dateKey = `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
-            
+
             // Count completed tasks for this date
             let completedCount = 0;
             let totalTasks = tasks.length;
-            
+
             // Skip dates with no tasks
             if (totalTasks === 0) {
                 completionRates[dateKey] = 0;
                 continue;
             }
-            
+
             // Check completion status for each task
             tasks.forEach(task => {
                 if (task.completed && task.completed.get(dateKey)) {
                     completedCount++;
                 }
             });
-            
+
             // Calculate completion rate as percentage
             completionRates[dateKey] = (completedCount / totalTasks) * 100;
         }
-        
+
         res.json(completionRates);
     } catch (err) {
         console.error('Error fetching completion rates:', err);

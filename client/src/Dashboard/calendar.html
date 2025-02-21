@@ -37,38 +37,38 @@
         </div>
     </div>
 
-  <!-- Floating Checklist Modal -->
-<div id="modalOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center" style="display: none;">
-    <div id="checklistModal" class="bg-white p-6 rounded-lg shadow-lg w-96 max-h-[80vh] overflow-y-auto relative">
-        <!-- Close Button -->
-        <button id="closeModal" class="absolute top-2 right-2 text-gray-600 text-xl hover:text-gray-800">&times;</button>
+    <!-- Floating Checklist Modal -->
+    <div id="modalOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center" style="display: none;">
+        <div id="checklistModal" class="bg-white p-6 rounded-lg shadow-lg w-96 max-h-[80vh] overflow-y-auto relative">
+            <!-- Close Button -->
+            <button id="closeModal" class="absolute top-2 right-2 text-gray-600 text-xl hover:text-gray-800">&times;</button>
 
-        <!-- Modal Title -->
-        <h2 id="modalTitle" class="text-xl font-bold text-gray-800 mb-4">Checklist</h2>
+            <!-- Modal Title -->
+            <h2 id="modalTitle" class="text-xl font-bold text-gray-800 mb-4">Checklist</h2>
 
-        <!-- Tasks and Time Container -->
-        <div class="flex flex-col space-y-4">
-            <!-- Task and Time Row -->
-            <div class="flex justify-between items-center">
-                <!-- Tasks Column -->
-                <div class="flex-1 pr-4">
-                    <h3 class="font-semibold text-gray-700 mb-2">Tasks</h3>
-                    <ul id="tasksColumn" class="space-y-2 max-h-64 overflow-y-auto">
-                        <!-- Tasks will be added dynamically -->
-                    </ul>
-                </div>
+            <!-- Tasks and Time Container -->
+            <div class="flex flex-col space-y-4">
+                <!-- Task and Time Row -->
+                <div class="flex justify-between items-center">
+                    <!-- Tasks Column -->
+                    <div class="flex-1 pr-4">
+                        <h3 class="font-semibold text-gray-700 mb-2">Tasks</h3>
+                        <ul id="tasksColumn" class="space-y-2 max-h-64 overflow-y-auto">
+                            <!-- Tasks will be added dynamically -->
+                        </ul>
+                    </div>
 
-                <!-- Time Column -->
-                <div class="w-24 text-right">
-                    <h3 class="font-semibold text-gray-700 mb-2">Time</h3>
-                    <ul id="timeColumn" class="space-y-2 max-h-64 overflow-y-auto">
-                        <!-- Times will be added dynamically -->
-                    </ul>
+                    <!-- Time Column -->
+                    <div class="w-24 text-right">
+                        <h3 class="font-semibold text-gray-700 mb-2">Time</h3>
+                        <ul id="timeColumn" class="space-y-2 max-h-64 overflow-y-auto">
+                            <!-- Times will be added dynamically -->
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
     <!-- Footer -->
     <footer class="fixed bottom-0 mt-8 w-full bg-gray-200 py-4 text-center text-black">
@@ -77,186 +77,176 @@
         </div>
     </footer>
 
-
-
-
-
-    
     <!-- JavaScript for Dynamic Calendar and Checklist -->
     <script>
+        const token = localStorage.getItem('token');
+        let currentDate = new Date();
+        const calendarGrid = document.getElementById('calendarGrid');
+        const currentMonthYear = document.getElementById('currentMonthYear');
+        const modalOverlay = document.getElementById("modalOverlay");
+        const checklistModal = document.getElementById("checklistModal");
+        const closeModal = document.getElementById("closeModal");
+        const modalTitle = document.getElementById("modalTitle");
+        const tasksColumn = document.getElementById("tasksColumn");
+        const timeColumn = document.getElementById("timeColumn");
+
         // Helper function to format time in AM/PM
-    function formatTime(time) {
-        if (!time) return ""; // Handle empty time
-
-        // Split the time into hours and minutes
-        const [hours, minutes] = time.split(":");
-
-        // Convert hours to 12-hour format
-        let formattedHours = parseInt(hours, 10);
-        const ampm = formattedHours >= 12 ? "PM" : "AM";
-        formattedHours = formattedHours % 12 || 12; // Convert 0 to 12
-
-        // Return formatted time (e.g., "1:00 PM")
-        return `${formattedHours}:${minutes} ${ampm}`;
-    }
-
-
-    let currentDate = new Date();
-const calendarGrid = document.getElementById('calendarGrid');
-const currentMonthYear = document.getElementById('currentMonthYear');
-const modalOverlay = document.getElementById("modalOverlay");
-const checklistModal = document.getElementById("checklistModal");
-const closeModal = document.getElementById("closeModal");
-const modalTitle = document.getElementById("modalTitle");
-const tasksColumn = document.getElementById("tasksColumn");
-const timeColumn = document.getElementById("timeColumn");
-
-
-// Function to render the calendar
-function renderCalendar() {
-    calendarGrid.innerHTML = ''; // Clear the grid
-
-    const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    currentMonthYear.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
-
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    for (let i = 1; i <= daysInMonth; i++) {
-        const dayBox = document.createElement('div');
-        dayBox.className = 'w-20 h-20 flex flex-col items-center justify-center border border-gray-300 rounded-lg shadow-md bg-white hover:shadow-lg transition-shadow';
-
-        let dayButton = document.createElement("button");
-        dayButton.textContent = `Day ${i}`;
-        dayButton.className = "text-center text-gray-800 font-medium hover:bg-gray-200 px-2 py-1 rounded-lg";
-        dayButton.onclick = function () {
-            openChecklist(i);
-        };
-
-        dayBox.appendChild(dayButton);
-        calendarGrid.appendChild(dayBox);
-    }
-}
-
-// Open Checklist Modal
-// Function to open the checklist modal and fetch tasks
-async function openChecklist(day) {
-    const selectedDate = `${String(day).padStart(2, '0')}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${currentDate.getFullYear()}`;
-    modalTitle.textContent = `Day ${day} (${selectedDate})`;
-    tasksColumn.innerHTML = "";
-    timeColumn.innerHTML = "";
-
-    try {
-        const response = await fetch('/api/tasks');
-        if (!response.ok) {
-            throw new Error('Failed to fetch tasks');
+        function formatTime(time) {
+            if (!time) return ""; // Handle empty time
+            const [hours, minutes] = time.split(":");
+            let formattedHours = parseInt(hours, 10);
+            const ampm = formattedHours >= 12 ? "PM" : "AM";
+            formattedHours = formattedHours % 12 || 12; // Convert 0 to 12
+            return `${formattedHours}:${minutes} ${ampm}`;
         }
 
-        const tasks = await response.json();
-        console.log('Fetched tasks:', tasks); // Add this for debugging
+        // Function to render the calendar
+        function renderCalendar() {
+            calendarGrid.innerHTML = ''; // Clear the grid
 
-        if (tasks.length === 0) {
-            tasksColumn.innerHTML = "<li class='text-gray-600'>No tasks found.</li>";
-            timeColumn.innerHTML = "<li class='text-gray-600'>-</li>";
-            return;
+            const monthNames = [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+            ];
+            currentMonthYear.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayBox = document.createElement('div');
+                dayBox.className = 'w-20 h-20 flex flex-col items-center justify-center border border-gray-300 rounded-lg shadow-md bg-white hover:shadow-lg transition-shadow';
+
+                let dayButton = document.createElement("button");
+                dayButton.textContent = `Day ${i}`;
+                dayButton.className = "text-center text-gray-800 font-medium hover:bg-gray-200 px-2 py-1 rounded-lg";
+                dayButton.onclick = function () {
+                    openChecklist(i);
+                };
+
+                dayBox.appendChild(dayButton);
+                calendarGrid.appendChild(dayBox);
+            }
         }
 
-        tasks.forEach(task => {
-            // Task Item
-            const taskItem = document.createElement("li");
-            taskItem.className = "flex items-center gap-2";
-            
-            // Check if completed is a Map-like object and has the date
-            const isCompleted = task.completed && task.completed[selectedDate];
-            
-            taskItem.innerHTML = `
-                <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-500" 
-                    ${isCompleted ? 'checked' : ''} 
-                    data-task-id="${task._id}">
-                <span class="text-gray-800 break-words">${task.name}</span>
-            `;
-            tasksColumn.appendChild(taskItem);
+        // Function to open the checklist modal and fetch tasks
+        async function openChecklist(day) {
+            const selectedDate = `${String(day).padStart(2, '0')}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${currentDate.getFullYear()}`;
+            modalTitle.textContent = `Day ${day} (${selectedDate})`;
+            tasksColumn.innerHTML = "";
+            timeColumn.innerHTML = "";
 
-            // Time Item
-            const timeItem = document.createElement("li");
-            timeItem.className = "text-gray-600 break-words text-right";
-            timeItem.textContent = formatTime(task.time);
-            timeColumn.appendChild(timeItem);
-
-            // Add event listener to the checkbox
-            const checkbox = taskItem.querySelector('input[type="checkbox"]');
-            checkbox.addEventListener('change', async () => {
-                try {
-                    await updateTaskCompletionStatus(task._id, checkbox.checked, selectedDate);
-                } catch (err) {
-                    console.error('Error updating completion status:', err);
-                    checkbox.checked = !checkbox.checked; // Revert the checkbox if update fails
+            try {
+                const response = await fetch('/api/tasks', {
+                    headers: {
+                        'Authorization': token, // Add the token
+                    },
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch tasks');
                 }
-            });
-        });
-    } catch (err) {
-        console.error('Error fetching tasks:', err);
-        tasksColumn.innerHTML = "<li class='text-red-500'>Failed to load tasks.</li>";
-        timeColumn.innerHTML = "<li class='text-red-500'>-</li>";
-    }
 
-    modalOverlay.style.display = "flex";
-}
+                const tasks = await response.json();
+                console.log('Fetched tasks:', tasks); // Add this for debugging
 
+                if (tasks.length === 0) {
+                    tasksColumn.innerHTML = "<li class='text-gray-600'>No tasks found.</li>";
+                    timeColumn.innerHTML = "<li class='text-gray-600'>-</li>";
+                    return;
+                }
 
-//updateTaskCompletionStatus
-async function updateTaskCompletionStatus(taskId, completed, date) {
-    try {
-        const response = await fetch(`/api/tasks/${taskId}/complete`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ completed, date }),
-        });
+                tasks.forEach(task => {
+                    // Task Item
+                    const taskItem = document.createElement("li");
+                    taskItem.className = "flex items-center gap-2";
+                    
+                    // Check if completed is a Map-like object and has the date
+                    const isCompleted = task.completed && task.completed[selectedDate];
+                    
+                    taskItem.innerHTML = `
+                        <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-500" 
+                            ${isCompleted ? 'checked' : ''} 
+                            data-task-id="${task._id}">
+                        <span class="text-gray-800 break-words">${task.name}</span>
+                    `;
+                    tasksColumn.appendChild(taskItem);
 
-        if (!response.ok) {
-            throw new Error('Failed to update task completion status');
+                    // Time Item
+                    const timeItem = document.createElement("li");
+                    timeItem.className = "text-gray-600 break-words text-right";
+                    timeItem.textContent = formatTime(task.time);
+                    timeColumn.appendChild(timeItem);
+
+                    // Add event listener to the checkbox
+                    const checkbox = taskItem.querySelector('input[type="checkbox"]');
+                    checkbox.addEventListener('change', async () => {
+                        try {
+                            await updateTaskCompletionStatus(task._id, checkbox.checked, selectedDate);
+                        } catch (err) {
+                            console.error('Error updating completion status:', err);
+                            checkbox.checked = !checkbox.checked; // Revert the checkbox if update fails
+                        }
+                    });
+                });
+            } catch (err) {
+                console.error('Error fetching tasks:', err);
+                tasksColumn.innerHTML = "<li class='text-red-500'>Failed to load tasks.</li>";
+                timeColumn.innerHTML = "<li class='text-red-500'>-</li>";
+            }
+
+            modalOverlay.style.display = "flex";
         }
 
-        const updatedTask = await response.json();
-        console.log('Task completion status updated:', updatedTask);
-    } catch (err) {
-        console.error('Error updating task completion status:', err);
-        alert('Failed to update task completion status. Please try again.');
-    }
-}
+        // Function to update task completion status
+        async function updateTaskCompletionStatus(taskId, completed, date) {
+            try {
+                const response = await fetch(`/api/tasks/${taskId}/complete`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token, // Add the token
+                    },
+                    body: JSON.stringify({ completed, date }),
+                });
 
-// Close Modal
-closeModal.addEventListener("click", () => {
-modalOverlay.style.display = "none"; // Hide modal
-});
+                if (!response.ok) {
+                    throw new Error('Failed to update task completion status');
+                }
 
-// Close modal when clicking outside
-modalOverlay.addEventListener("click", (e) => {
-if (e.target === modalOverlay) {
-modalOverlay.style.display = "none"; // Hide modal
-}
-});
+                const updatedTask = await response.json();
+                console.log('Task completion status updated:', updatedTask);
+            } catch (err) {
+                console.error('Error updating task completion status:', err);
+                alert('Failed to update task completion status. Please try again.');
+            }
+        }
 
-// Event listeners for previous/next month buttons
-document.getElementById('prevMonth').addEventListener('click', () => {
-    currentDate.setMonth(currentDate.getMonth() - 1);
-    renderCalendar();
-});
+        // Close Modal
+        closeModal.addEventListener("click", () => {
+            modalOverlay.style.display = "none"; // Hide modal
+        });
 
-document.getElementById('nextMonth').addEventListener('click', () => {
-    currentDate.setMonth(currentDate.getMonth() + 1);
-    renderCalendar();
-});
+        // Close modal when clicking outside
+        modalOverlay.addEventListener("click", (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.style.display = "none"; // Hide modal
+            }
+        });
 
-// Render the calendar on page load
-renderCalendar();
-</script>
+        // Event listeners for previous/next month buttons
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        });
 
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        // Render the calendar on page load
+        renderCalendar();
+    </script>
 </body>
 </html>
