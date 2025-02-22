@@ -31,9 +31,9 @@
         <button onclick="openAddTaskModal()" class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">+ Add Task</button>
       </div>
 
-      <!-- Task Table -->
-      <div class="overflow-hidden rounded-lg bg-white shadow-lg">
-        <table class="w-full border border-gray-300">
+      <!-- Scrollable Table Container -->
+      <div class="overflow-x-auto rounded-lg bg-white shadow-lg">
+        <table class="w-full min-w-[600px] border border-gray-300">
           <thead class="bg-gray-200">
             <tr>
               <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tasks</th>
@@ -65,11 +65,32 @@
     <div id="addTaskModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50">
       <div class="rounded-lg bg-white p-6 shadow-lg">
         <h2 class="mb-4 text-xl font-bold">Add Task</h2>
-        <input type="text" id="taskName" placeholder="Task Name" class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2" />
-        <input type="time" id="taskTime" class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2" />
+        <input
+          type="text"
+          id="taskName"
+          placeholder="Task Name"
+          class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2"
+          onkeydown="handleEnterKey(event)" 
+        />
+        <input
+          type="time"
+          id="taskTime"
+          class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2"
+          onkeydown="handleEnterKey(event)" 
+        />
         <div class="flex justify-end">
-          <button onclick="closeAddTaskModal()" class="mr-2 rounded-md bg-gray-300 px-4 py-2 text-gray-800 hover:bg-gray-400">Cancel</button>
-          <button onclick="addTask()" class="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Add</button>
+          <button
+            onclick="closeAddTaskModal()"
+            class="mr-2 rounded-md bg-gray-300 px-4 py-2 text-gray-800 hover:bg-gray-400"
+          >
+            Cancel
+          </button>
+          <button
+            onclick="addTask()"
+            class="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          >
+            Add
+          </button>
         </div>
       </div>
     </div>
@@ -78,11 +99,32 @@
     <div id="editTaskModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50">
       <div class="rounded-lg bg-white p-6 shadow-lg">
         <h2 class="mb-4 text-xl font-bold">Edit Task</h2>
-        <input type="text" id="editTaskName" placeholder="Task Name" class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2" />
-        <input type="time" id="editTaskTime" class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2" />
+        <input
+          type="text"
+          id="editTaskName"
+          placeholder="Task Name"
+          class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2"
+          onkeydown="handleEditEnterKey(event)" 
+        />
+        <input
+          type="time"
+          id="editTaskTime"
+          class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2"
+          onkeydown="handleEditEnterKey(event)" 
+        />
         <div class="flex justify-end">
-          <button onclick="closeEditTaskModal()" class="mr-2 rounded-md bg-gray-300 px-4 py-2 text-gray-800 hover:bg-gray-400">Cancel</button>
-          <button onclick="saveEditedTask()" class="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Save</button>
+          <button
+            onclick="closeEditTaskModal()"
+            class="mr-2 rounded-md bg-gray-300 px-4 py-2 text-gray-800 hover:bg-gray-400"
+          >
+            Cancel
+          </button>
+          <button
+            onclick="saveEditedTask()"
+            class="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          >
+            Save
+          </button>
         </div>
       </div>
     </div>
@@ -157,6 +199,20 @@
         document.getElementById('addTaskModal').classList.add('hidden');
         document.getElementById('taskName').value = ""; // Clear task name
         document.getElementById('taskTime').value = ""; // Clear task time
+      }
+
+      // Function to handle Enter key press in the Add Task Modal
+      function handleEnterKey(event) {
+        if (event.key === "Enter") {
+          addTask(); // Trigger the addTask function
+        }
+      }
+
+      // Function to handle Enter key press in the Edit Task Modal
+      function handleEditEnterKey(event) {
+        if (event.key === "Enter") {
+          saveEditedTask(); // Trigger the saveEditedTask function
+        }
       }
 
       // Function to add a new task

@@ -36,7 +36,6 @@
             </div>
         </div>
 
-        <!-- Yearly Progress Heatmap Section -->
         <div class="bg-white p-6 rounded-lg shadow-lg">
             <h2 class="text-2xl font-bold mb-4">Yearly Progress Heatmap</h2>
             <div class="flex items-center justify-between mb-6">
@@ -44,12 +43,15 @@
                 <h4 id="yearLabel" class="text-xl font-semibold"></h4>
                 <button id="nextYear" class="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors">Next Year &rarr;</button>
             </div>
+            <!-- Add a container with fixed height and overflow -->
             <div class="overflow-x-auto">
-                <div id="heatmap" class="flex min-w-full"></div>
+                <div id="heatmap" class="flex min-w-max"></div>
             </div>
         </div>
     </div>
 
+
+       <!-- footer -->
     <footer class="bg-gray-200 text-black py-8 mt-8">
         <div class="max-w-6xl mx-auto px-4 text-center">
             <p>&copy; 2025 HabitTracker. All rights reserved.</p>
@@ -81,7 +83,8 @@
         }
 
         // Monthly Progress Chart
-        const monthlyProgressChart = new Chart(document.getElementById('weeklyProgressChart'), {
+       // Monthly Progress Chart
+       const monthlyProgressChart = new Chart(document.getElementById('weeklyProgressChart'), {
             type: 'bar',
             data: {
                 labels: [],
@@ -196,12 +199,17 @@
             if (completionData) {
                 heatmap.innerHTML = "";
                 
+                const existingLegend = document.querySelector('.heatmap-legend');
+                if (existingLegend) {
+                    existingLegend.remove();
+                }
+                
                 // Create month labels column with fixed width
                 const labelColumn = document.createElement('div');
-                labelColumn.className = 'flex flex-col mr-4 w-12';
+                labelColumn.className = 'flex flex-col mr-4 w-16 flex-shrink-0'; // Made slightly wider and prevent shrinking
                 monthNames.forEach(month => {
                     const label = document.createElement('div');
-                    label.className = 'h-8 flex items-center text-sm font-medium text-gray-600';
+                    label.className = 'h-10 flex items-center text-sm font-medium text-gray-600'; // Increased height to match squares
                     label.textContent = month;
                     labelColumn.appendChild(label);
                 });
@@ -209,7 +217,7 @@
 
                 // Create main heatmap grid
                 const gridContainer = document.createElement('div');
-                gridContainer.className = 'flex flex-col gap-2 flex-grow';
+                gridContainer.className = 'flex flex-col gap-2';
 
                 // Create rows for each month
                 for (let month = 0; month < 12; month++) {
@@ -223,7 +231,8 @@
                         const dateKey = `${String(day).padStart(2, '0')}-${String(month + 1).padStart(2, '0')}-${year}`;
                         const completionRate = completionData[dateKey] || 0;
                         
-                        cell.className = `h-8 w-8 rounded-sm ${getHeatmapColor(completionRate)} hover:ring-2 hover:ring-blue-400 hover:ring-offset-1 transition-colors duration-200`;
+                        // Set fixed dimensions for squares
+                        cell.className = `h-10 w-10 flex-shrink-0 rounded-sm ${getHeatmapColor(completionRate)} hover:ring-2 hover:ring-blue-400 hover:ring-offset-1 transition-colors duration-200`;
                         cell.title = `${monthNames[month]} ${day}, ${year}: ${completionRate.toFixed(1)}%`;
                         monthRow.appendChild(cell);
                     }
@@ -231,15 +240,11 @@
                     gridContainer.appendChild(monthRow);
                 }
                 
-                // Create a wrapper for the heatmap content
-                const heatmapWrapper = document.createElement('div');
-                heatmapWrapper.className = 'overflow-x-auto flex-grow';
-                heatmapWrapper.appendChild(gridContainer);
-                heatmap.appendChild(heatmapWrapper);
+                heatmap.appendChild(gridContainer);
 
-                // Add legend
+                // Add legend with fixed-size squares
                 const legend = document.createElement('div');
-                legend.className = 'mt-6 flex items-center justify-center gap-4';
+                legend.className = 'mt-6 flex items-center justify-center gap-4 heatmap-legend';
                 
                 const legendItems = [
                     { label: '0%', color: 'bg-gray-200' },
@@ -254,7 +259,7 @@
                     legendItem.className = 'flex items-center gap-2';
                     
                     const colorBox = document.createElement('div');
-                    colorBox.className = `w-4 h-4 ${item.color} rounded-sm`;
+                    colorBox.className = `w-6 h-6 flex-shrink-0 ${item.color} rounded-sm`; // Fixed size for legend squares
                     
                     const label = document.createElement('span');
                     label.className = 'text-sm text-gray-600';
@@ -265,13 +270,13 @@
                     legend.appendChild(legendItem);
                 });
 
-                // Add legend below the heatmap
                 const container = heatmap.parentElement;
                 container.appendChild(legend);
             }
 
             yearLabel.textContent = `Year ${year}`;
         }
+
 
         // Event listeners for month navigation
         prevMonthButton.addEventListener('click', () => {
