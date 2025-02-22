@@ -6,24 +6,38 @@ const jwt = require('jsonwebtoken');
 const app = express();
 const PORT = 3000;
 
-// Serve static files (your frontend HTML, CSS, JS)
+/******************************************************************************
+ * Serve static files (your frontend HTML, CSS, JS)
+ ******************************************************************************/
 app.use(express.static(path.join(__dirname, '../client/src')));
 
-// Connect to MongoDB
+/******************************************************************************
+ * Connect to MongoDB
+ ******************************************************************************/
 mongoose.connect('mongodb://localhost:27017/habitTracker', {
 })
 .then(() => console.log('Connected to MongoDB'))
 .catch((err) => console.error('Failed to connect to MongoDB', err));
 
-// Middleware to parse JSON
+/******************************************************************************
+ * Middleware to parse JSON
+ ******************************************************************************/
 app.use(express.json());
 
+
+/******************************************************************************
+ * Define Mongoose Schemas
+ ******************************************************************************/
 // Define the User schema
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
 });
 
+
+/******************************************************************************
+ * Create Mongoose Models
+ ******************************************************************************/
 // Create the User model
 const User = mongoose.model('User', userSchema);
 
@@ -38,6 +52,10 @@ const taskSchema = new mongoose.Schema({
 // Create the Task model
 const Task = mongoose.model('Task', taskSchema);
 
+
+/******************************************************************************
+ * Authentication Middleware
+ ******************************************************************************/
 // Authentication middleware
 const authenticate = (req, res, next) => {
     const token = req.header('Authorization');
@@ -56,7 +74,14 @@ const authenticate = (req, res, next) => {
     }
 };
 
-// Route to register a new user
+
+/******************************************************************************
+ * Routes
+ ******************************************************************************/
+
+
+
+/****************Route to register a new user***********************/
 app.post('/api/register', async (req, res) => {
     const { username, password } = req.body;
 
@@ -81,7 +106,10 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// Route to login a user
+
+
+
+/**************** Route to login a user***********************/ 
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
 
@@ -108,7 +136,7 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// Route to fetch user data
+/****************Route to fetch user data***********************/ 
 app.get('/api/user', authenticate, async (req, res) => {
     try {
         // Find the user by ID and exclude the password field
@@ -125,7 +153,7 @@ app.get('/api/user', authenticate, async (req, res) => {
     }
 });
 
-// Route to fetch tasks for the authenticated user
+/**************** Route to fetch tasks for the authenticated user***********************/
 app.get('/api/tasks', authenticate, async (req, res) => {
     try {
         const tasks = await Task.find({ user: req.user._id });
@@ -135,7 +163,7 @@ app.get('/api/tasks', authenticate, async (req, res) => {
     }
 });
 
-// Route to add a new task for the authenticated user
+/****************  Route to add a new task for the authenticated user***********************/
 app.post('/api/tasks', authenticate, async (req, res) => {
     const { name, time } = req.body;
 
@@ -152,7 +180,7 @@ app.post('/api/tasks', authenticate, async (req, res) => {
     }
 });
 
-// Route to update a task for the authenticated user
+/****************Route to update a task for the authenticated user***********************/
 app.put('/api/tasks/:id', authenticate, async (req, res) => {
     const { id } = req.params;
     const { name, time } = req.body;
@@ -178,7 +206,7 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
     }
 });
 
-// Route to delete a task for the authenticated user
+/****************Route to delete a task for the authenticated user***********************/
 app.delete('/api/tasks/:id', authenticate, async (req, res) => {
     const { id } = req.params;
 
@@ -195,7 +223,7 @@ app.delete('/api/tasks/:id', authenticate, async (req, res) => {
     }
 });
 
-// Route to save multiple tasks
+/****************Route to save multiple tasks***********************/
 app.post('/api/tasks/save', authenticate, async (req, res) => {
     const { tasks } = req.body;
 
@@ -223,7 +251,7 @@ app.post('/api/tasks/save', authenticate, async (req, res) => {
     }
 });
 
-// Route to delete all tasks for the authenticated user
+/****************Route to delete all tasks for the authenticated user***********************/
 app.delete('/api/tasks', authenticate, async (req, res) => {
     try {
         await Task.deleteMany({ user: req.user._id });
@@ -233,7 +261,7 @@ app.delete('/api/tasks', authenticate, async (req, res) => {
     }
 });
 
-// Route to update task completion status for a specific date
+/****************Route to update task completion status for a specific date***********************/
 app.patch('/api/tasks/:id/complete', authenticate, async (req, res) => {
     const { id } = req.params;
     const { completed, date } = req.body;
@@ -259,7 +287,7 @@ app.patch('/api/tasks/:id/complete', authenticate, async (req, res) => {
     }
 });
 
-// Route to get completion rates for a date range for the authenticated user
+/****************Route to get completion rates for a date range for the authenticated user***********************/
 app.get('/api/completion-rates', authenticate, async (req, res) => {
     const { startDate, endDate } = req.query;
 
@@ -310,6 +338,10 @@ app.get('/api/completion-rates', authenticate, async (req, res) => {
     }
 });
 
+
+/******************************************************************************
+ * Start the server
+ ******************************************************************************/
 // Start the server
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
