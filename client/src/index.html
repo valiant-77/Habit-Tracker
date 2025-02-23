@@ -32,8 +32,7 @@
                     Transform Your Life, One Habit at a Time
                 </h1>
                 <p class="text-xl mb-8">
-                    "We are what we repeatedly do. Excellence, then, is not an act, but a habit."
-                    - Aristotle
+                    "Motivation is what gets you started. Discipline is what keeps you going."
                 </p>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
@@ -56,59 +55,71 @@
     </div>
 
     <!-- How it works section -->
-    <div class="container mx-auto text-center">
-       <h2 class="text-4xl font-bold mb-4 mt-5">Here's how you can use this website!</h2>
-    </div>
+<div class="bg-gray-50 py-16">
+    <div class="container mx-auto text-center px-4">
+        <h2 class="text-4xl font-bold mb-12">Here's how you can use this website!</h2>
+        
+        <!-- Steps Container -->
+        <div class="space-y-12 max-w-6xl mx-auto">
+            <!-- Step 1 -->
+            <div class="bg-white rounded-xl shadow-lg p-8 transform transition-all hover:scale-[1.02]">
+                <div class="flex items-center justify-center mb-6">
+                    <span class="bg-blue-600 text-white text-xl font-bold rounded-full w-12 h-12 flex items-center justify-center">
+                        1
+                    </span>
+                </div>
+                <h3 class="text-2xl font-bold mb-4">Create Schedule</h3>
+                <p class="text-lg text-gray-700 mb-8">
+                    Click "Add Task" to add a task to your schedule, edit or delete as needed, and hit "Save" to store it.
+                </p>
+                <div class="flex justify-center">
+                    <video controls class="w-full max-w-2xl rounded-lg shadow-md">
+                        <source src="./Videos/Schedule.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </div>
 
-    <!-- Step 1 -->
-    <div class="container mx-auto px-4 py-5">
-        <div class="text-center">
-            <h3 class="text-2xl font-bold mb-4">Step 1: Create Habits</h3>
-            <p class="text-lg text-gray-700 mb-6">
-                Start by defining the habits you want to build. You can schedule them at your preferred time and set reminders to stay on track.
-            </p>
-            <div class="flex justify-center">
-                <video controls class="w-full max-w-2xl">
-                    <source src="path_to_step1_video.mp4" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
+            <!-- Step 2 -->
+            <div class="bg-white rounded-xl shadow-lg p-8 transform transition-all hover:scale-[1.02]">
+                <div class="flex items-center justify-center mb-6">
+                    <span class="bg-blue-600 text-white text-xl font-bold rounded-full w-12 h-12 flex items-center justify-center">
+                        2
+                    </span>
+                </div>
+                <h3 class="text-2xl font-bold mb-4">Complete Tasks</h3>
+                <p class="text-lg text-gray-700 mb-8">
+                    View your daily schedule, mark tasks as completed, and your changes will be saved automatically.
+                </p>
+                <div class="flex justify-center">
+                    <video controls class="w-full max-w-2xl rounded-lg shadow-md">
+                        <source src="./Videos/Tasks.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="bg-white rounded-xl shadow-lg p-8 transform transition-all hover:scale-[1.02]">
+                <div class="flex items-center justify-center mb-6">
+                    <span class="bg-blue-600 text-white text-xl font-bold rounded-full w-12 h-12 flex items-center justify-center">
+                        3
+                    </span>
+                </div>
+                <h3 class="text-2xl font-bold mb-4">Track Progress</h3>
+                <p class="text-lg text-gray-700 mb-8">
+                    View and monitor your progress over time.
+                </p>
+                <div class="flex justify-center">
+                    <video controls class="w-full max-w-2xl rounded-lg shadow-md">
+                        <source src="./Videos/Progress.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
             </div>
         </div>
     </div>
-
-<!-- Step 2 -->
-<div class="container mx-auto px-4 py-5">
-  <div class="text-center">
-      <h3 class="text-2xl font-bold mb-4">Step 2: Stay Consistent</h3>
-      <p class="text-lg text-gray-700 mb-6">
-          Consistency is key to building lasting habits. Our intuitive tracking system ensures you stay on course and achieve your goals.
-      </p>
-      <div class="flex justify-center">
-          <video controls class="w-full max-w-2xl">
-              <source src="path_to_step3_video.mp4" type="video/mp4">
-              Your browser does not support the video tag.
-          </video>
-      </div>
-  </div>
 </div>
-
-
-    <!-- Step 3 -->
-    <div class="container mx-auto px-4 py-5">
-        <div class="text-center">
-            <h3 class="text-2xl font-bold mb-4">Step 3: Track Progress</h3>
-            <p class="text-lg text-gray-700 mb-6">
-                Monitor your daily achievements and view detailed progress reports. Our system helps you visualize your growth and stay motivated.
-            </p>
-            <div class="flex justify-center">
-                <video controls class="w-full max-w-2xl">
-                    <source src="path_to_step2_video.mp4" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            </div>
-        </div>
-    </div>
-
     
 
     <!-- Footer -->
@@ -117,5 +128,46 @@
             <p>&copy; 2025 HabitTracker. All rights reserved.</p>
         </div>
     </footer>
+
+  <!-- Sticky Banner for Mobile Users -->
+<div id="mobile-banner" class="fixed bottom-0 left-0 right-0 bg-blue-600 text-white text-center py-2 md:hidden flex items-center justify-between px-4">
+    <p class="text-sm">
+        For the best experience, please use this website on a computer.
+    </p>
+    <button id="close-banner" class="text-white hover:text-gray-200 focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+    </button>
+</div>
+
+<script>
+    // Function to check screen size
+    function isMobileScreen() {
+        return window.innerWidth < 768; // Tailwind's `md` breakpoint is 768px
+    }
+
+    // Check if the user has already closed the banner and if the screen is mobile
+    if (localStorage.getItem('bannerClosed') !== 'true' && isMobileScreen()) {
+        document.getElementById('mobile-banner').style.display = 'flex';
+    }
+
+    // Add event listener to close the banner
+    document.getElementById('close-banner').addEventListener('click', function() {
+        document.getElementById('mobile-banner').style.display = 'none';
+        localStorage.setItem('bannerClosed', 'true'); // Save the preference
+    });
+
+    // Handle screen resizing
+    window.addEventListener('resize', function() {
+        if (isMobileScreen() && localStorage.getItem('bannerClosed') !== 'true') {
+            document.getElementById('mobile-banner').style.display = 'flex';
+        } else {
+            document.getElementById('mobile-banner').style.display = 'none';
+        }
+    });
+</script>
+
+
 </body>
 </html>
