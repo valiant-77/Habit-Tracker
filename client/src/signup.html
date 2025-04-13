@@ -16,16 +16,20 @@
                     <span class="text-xl font-bold text-gray-800">HabitTracker</span>
                 </div>
                 <div class="flex items-center">
-                    <a href="./index.html" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300">Back to Home</a>
+                    <a href="./index.html" class="px-3 py-2 md:px-4 text-sm md:text-base rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300">Back to Home</a>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Signup Form -->
-    <div class="min-h-screen flex items-center justify-center">
-        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-            <h2 class="text-2xl font-bold text-center mb-6">Create Your Account</h2>
+    <div class="min-h-screen flex items-center justify-center px-4 py-8">
+        <div class="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-lg w-full max-w-md">
+            <h2 class="text-xl sm:text-2xl font-bold text-center mb-4 sm:mb-6">Create Your Account</h2>
+            
+            <!-- Message Display Area -->
+            <div id="messageDisplay" style="display: none; text-align: center; margin: 0 auto 16px auto; padding: 8px 0;"></div>
+            
             <form id="signupForm">
                 <!-- Username Input -->
                 <div class="mb-4">
@@ -40,15 +44,24 @@
                 </div>
 
                 <!-- Password Input -->
-                <div class="mb-6">
+                <div class="mb-4 sm:mb-6">
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Password</label>
-                    <input
-                        type="password"
-                        id="password"
-                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Create a password"
-                        required
-                    />
+                    <div class="relative">
+                        <input
+                            type="password"
+                            id="password"
+                            class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Create a password"
+                            required
+                        />
+                        <button 
+                            type="button" 
+                            id="togglePassword" 
+                            class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-800"
+                        >
+                            👁️
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Signup Button -->
@@ -60,14 +73,14 @@
                 </button>
 
                 <!-- Note -->
-                <p class="text-sm text-gray-600 mt-4">
+                <p class="text-xs sm:text-sm text-gray-600 mt-4">
                     <strong>Note:</strong><br>
                     - You can simply sign up with your username; no need for an email!<br>
                     - Remember your password since you can't recover it.
                 </p>
 
                 <!-- Login Link -->
-                <p class="text-center mt-4">
+                <p class="text-center mt-4 text-sm sm:text-base">
                     Already have an account? 
                     <a href="./login.html" class="text-blue-600 hover:underline">Login here</a>
                 </p>
@@ -76,14 +89,32 @@
     </div>
 
     <!-- Footer -->
-    <footer class="bg-gray-200 text-black py-8">
+    <footer class="bg-gray-200 text-black py-6 sm:py-8">
         <div class="max-w-6xl mx-auto px-4 text-center">
-            <p>&copy; 2025 HabitTracker. All rights reserved.</p>
+            <p class="text-sm sm:text-base">&copy; 2025 HabitTracker. All rights reserved.</p>
         </div>
     </footer>
 
     <!-- JavaScript for Signup Form -->
     <script>
+        function showMessage(message) {
+            const messageDisplay = document.getElementById('messageDisplay');
+            messageDisplay.textContent = message;
+            messageDisplay.style.display = 'block';
+        }
+
+        // Password toggle functionality (added exactly like login page)
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                this.textContent = '🔒'; // Change to locked icon when password is visible
+            } else {
+                passwordInput.type = 'password';
+                this.textContent = '👁️'; // Change back to eye icon when password is hidden
+            }
+        });
+
         document.getElementById('signupForm').addEventListener('submit', async (e) => {
             e.preventDefault(); // Prevent default form submission
 
@@ -103,16 +134,18 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Redirect to the login page after successful registration
-                    alert('Registration successful! Please login to continue.');
-                    window.location.href = '/login.html';
+                    // Show success message and redirect to login page
+                    showMessage('Registration successful! Please login to continue.');
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 2000); // Redirect after 2 seconds
                 } else {
                     // Display error message
-                    alert(data.error || 'Registration failed. Please try again.');
+                    showMessage(data.error || 'Registration failed. Please try again.');
                 }
             } catch (err) {
                 console.error('Error:', err);
-                alert('An error occurred. Please try again.');
+                showMessage('An error occurred. Please try again.');
             }
         });
     </script>

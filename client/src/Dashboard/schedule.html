@@ -6,6 +6,31 @@
     <title>Schedule - HabitTracker</title>
     <link href="../css/style.css" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Custom style to keep footer at bottom */
+      html, body {
+        min-height: 100vh;
+        position: relative;
+      }
+      
+      /* Add padding to bottom equal to footer height */
+      body {
+        padding-bottom: 60px; /* Adjust if your footer is taller */
+      }
+      
+      /* Fixed footer at bottom */
+      footer {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        z-index: 10; /* Lower than modal z-index */
+      }
+      
+      /* Modal styles - ensure it covers everything including footer */
+      .modal-overlay {
+        z-index: 20; /* Higher than footer */
+      }
+    </style>
   </head>
   <body class="bg-gray-100">
     <!-- Navbar -->
@@ -22,6 +47,31 @@
       </div>
     </nav>
 
+    <!-- Message Display Div -->
+    <div id="messageDisplay" style="display: none;"></div>
+    
+    <!-- Confirmation Dialog Div -->
+    <div id="confirmationDialog" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-30 hidden">
+      <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 transform transition-all">
+        <div class="flex items-start mb-4">
+          <div class="flex-shrink-0 mr-3">
+            <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div id="confirmationMessage" class="text-gray-800 font-medium"></div>
+        </div>
+        <div class="flex justify-end gap-3">
+          <button id="confirmNo" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+            Cancel
+          </button>
+          <button id="confirmYes" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+            Delete Schedule
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Schedule Content -->
     <div class="mx-auto max-w-4xl px-4 py-8">
       <h1 class="mb-8 text-center text-3xl font-bold">Your Schedule</h1>
@@ -33,12 +83,12 @@
 
       <!-- Scrollable Table Container -->
       <div class="overflow-x-auto rounded-lg bg-white shadow-lg">
-        <table class="w-full min-w-[600px] border border-gray-300">
+        <table class="w-full border border-gray-300">
           <thead class="bg-gray-200">
             <tr>
-              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Tasks</th>
-              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Time</th>
-              <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+              <th class="px-3 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Tasks</th>
+              <th class="px-3 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Time</th>
+              <th class="px-3 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Actions</th>
             </tr>
           </thead>
           <tbody id="taskTableBody" class="divide-y divide-gray-200">
@@ -55,7 +105,7 @@
     </div>
 
     <!-- Add Task Modal -->
-    <div id="addTaskModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50">
+    <div id="addTaskModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 modal-overlay">
       <div class="rounded-lg bg-white p-6 shadow-lg">
         <h2 class="mb-4 text-xl font-bold">Add Task</h2>
         <input
@@ -89,7 +139,7 @@
     </div>
 
     <!-- Edit Task Modal -->
-    <div id="editTaskModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50">
+    <div id="editTaskModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 modal-overlay">
       <div class="rounded-lg bg-white p-6 shadow-lg">
         <h2 class="mb-4 text-xl font-bold">Edit Task</h2>
         <input
@@ -122,8 +172,8 @@
       </div>
     </div>
 
-    <!-- Footer (changed from fixed to relative) -->
-    <footer class="mt-8 w-full bg-gray-200 py-4 text-center text-black">
+    <!-- Footer -->
+    <footer class="w-full bg-gray-200 py-4 text-center text-black">
       <div class="mx-auto max-w-6xl px-4 text-center">
         <p>&copy; 2025 HabitTracker. All rights reserved.</p>
       </div>
@@ -131,7 +181,60 @@
 
     <script>
       const token = localStorage.getItem('token');
-
+    
+      // Function to show message on screen
+      function showMessage(message) {
+        const messageDiv = document.getElementById('messageDisplay');
+        messageDiv.innerText = message;
+        messageDiv.style.display = 'block';
+        messageDiv.style.position = 'fixed';
+        messageDiv.style.top = '10px';
+        messageDiv.style.left = '50%';
+        messageDiv.style.transform = 'translateX(-50%)';
+        messageDiv.style.padding = '10px';
+        messageDiv.style.background = '#f0f0f0';
+        messageDiv.style.border = '1px solid #ccc';
+        messageDiv.style.zIndex = '999';
+        
+        // Hide the message after 3 seconds
+        setTimeout(() => {
+          messageDiv.style.display = 'none';
+        }, 3000);
+      }
+      
+      // Improved confirm dialog function
+      function showConfirm(message, onYes, onNo) {
+        const confirmDialog = document.getElementById('confirmationDialog');
+        const messageDiv = document.getElementById('confirmationMessage');
+        const yesButton = document.getElementById('confirmYes');
+        const noButton = document.getElementById('confirmNo');
+        
+        // Set the message
+        messageDiv.innerHTML = message;
+        
+        // Show the dialog with fade-in effect
+        confirmDialog.classList.remove('hidden');
+        
+        // Set up button handlers
+        yesButton.onclick = function() {
+          confirmDialog.classList.add('hidden');
+          if (onYes) onYes();
+        };
+        
+        noButton.onclick = function() {
+          confirmDialog.classList.add('hidden');
+          if (onNo) onNo();
+        };
+        
+        // Close on background click (optional)
+        confirmDialog.onclick = function(e) {
+          if (e.target === confirmDialog) {
+            confirmDialog.classList.add('hidden');
+            if (onNo) onNo();
+          }
+        };
+      }
+    
       // Helper function to format time in AM/PM
       function formatTime(time) {
         if (!time) return ""; // Handle empty time
@@ -141,17 +244,28 @@
         formattedHours = formattedHours % 12 || 12; // Convert 0 to 12
         return `${formattedHours}:${minutes} ${ampm}`;
       }
-
+    
       // Helper function to convert 12-hour time to 24-hour time
       function convertTo24HourFormat(time12h) {
-        if (!time12h) return ""; // Handle empty time
-        const [time, modifier] = time12h.split(" "); // Split time and AM/PM
-        let [hours, minutes] = time.split(":");
-        if (hours === "12") hours = "00"; // Handle 12 AM
-        if (modifier === "PM") hours = parseInt(hours, 10) + 12; // Convert to 24-hour format for PM
-        return `${hours}:${minutes}`; // Return in 24-hour format
-      }
-
+  if (!time12h) return ""; // Handle empty time
+  const [time, modifier] = time12h.split(" "); // Split time and AM/PM
+  let [hours, minutes] = time.split(":");
+  
+  // Convert hours to number for calculations
+  let hoursNum = parseInt(hours, 10);
+  
+  // Handle 12 AM/PM special cases
+  if (hoursNum === 12) {
+    hoursNum = modifier === "AM" ? 0 : 12;
+  } else if (modifier === "PM") {
+    hoursNum += 12;
+  }
+  
+  // Format with leading zeros for both hours and minutes
+  const formattedHours = hoursNum.toString().padStart(2, '0');
+  return `${formattedHours}:${minutes}`;
+}
+    
       // Function to fetch and render the schedule
       async function fetchAndRenderSchedule() {
         try {
@@ -166,60 +280,62 @@
           const tasks = await response.json();
           const taskTableBody = document.getElementById('taskTableBody');
           taskTableBody.innerHTML = "";
-
+    
           tasks.forEach(({ name, time, _id }) => {
             const newRow = document.createElement('tr');
             newRow.dataset.taskId = _id; // Add task ID to the row
             newRow.innerHTML = `
-              <td class="px-6 py-4">${name}</td>
-              <td class="px-6 py-4">${formatTime(time)}</td>
-              <td class="flex gap-2 px-6 py-4">
-                <button onclick="openEditTaskModal(this)" class="rounded-md border border-blue-600 px-2 py-1 text-blue-600 hover:bg-blue-100">Edit</button>
-                <button onclick="deleteTask('${_id}')" class="rounded-md border border-red-600 px-2 py-1 text-red-600 hover:bg-red-100">Delete</button>
+              <td class="px-2 sm:px-3 py-3 text-xs sm:text-sm">${name}</td>
+              <td class="px-2 sm:px-3 py-3 text-xs sm:text-sm">${formatTime(time)}</td>
+              <td class="flex flex-col sm:flex-row gap-1 sm:gap-2 px-2 sm:px-3 py-3">
+                <button onclick="openEditTaskModal(this)" class="rounded-md border border-blue-600 px-2 py-1 text-xs sm:text-sm text-blue-600 hover:bg-blue-100">Edit</button>
+                <button onclick="deleteTask('${_id}')" class="rounded-md border border-red-600 px-2 py-1 text-xs sm:text-sm text-red-600 hover:bg-red-100">Delete</button>
               </td>
             `;
             taskTableBody.appendChild(newRow);
           });
         } catch (err) {
           console.error('Error fetching tasks:', err);
-          alert('Failed to load schedule. Please try again.');
+          showMessage('Failed to load schedule. Please try again.');
         }
       }
-
+    
       // Fetch and render the schedule when the page loads
       document.addEventListener('DOMContentLoaded', fetchAndRenderSchedule);
-
+    
       // Function to open the Add Task Modal
       function openAddTaskModal() {
         document.getElementById('addTaskModal').classList.remove('hidden');
+        document.getElementById('addTaskModal').classList.add('flex');
       }
-
+    
       // Function to close the Add Task Modal
       function closeAddTaskModal() {
         document.getElementById('addTaskModal').classList.add('hidden');
+        document.getElementById('addTaskModal').classList.remove('flex');
         document.getElementById('taskName').value = ""; // Clear task name
         document.getElementById('taskTime').value = ""; // Clear task time
       }
-
+    
       // Function to handle Enter key press in the Add Task Modal
       function handleEnterKey(event) {
         if (event.key === "Enter") {
           addTask(); // Trigger the addTask function
         }
       }
-
+    
       // Function to handle Enter key press in the Edit Task Modal
       function handleEditEnterKey(event) {
         if (event.key === "Enter") {
           saveEditedTask(); // Trigger the saveEditedTask function
         }
       }
-
+    
       // Function to add a new task
       async function addTask() {
         const taskName = document.getElementById('taskName').value;
         const taskTime = document.getElementById('taskTime').value;
-
+    
         if (taskName && taskTime) {
           try {
             const response = await fetch('/api/tasks', {
@@ -230,49 +346,51 @@
               },
               body: JSON.stringify({ name: taskName, time: taskTime }),
             });
-
+    
             if (!response.ok) {
               throw new Error('Failed to save task');
             }
-
+    
             await fetchAndRenderSchedule();
             closeAddTaskModal();
           } catch (err) {
             console.error('Error saving task:', err);
-            alert('Failed to save task. Please try again.');
+            showMessage('Failed to save task. Please try again.');
           }
         } else {
-          alert('Please fill in both task name and time.');
+          showMessage('Please fill in both task name and time.');
         }
       }
-
+    
       // Function to open the Edit Task Modal
       function openEditTaskModal(button) {
         const row = button.closest('tr');
         const taskName = row.cells[0].innerText;
         const taskTime12h = row.cells[1].innerText;
         const taskId = row.dataset.taskId;
-
+    
         // Convert 12-hour time to 24-hour time for the input field
         const taskTime24h = convertTo24HourFormat(taskTime12h);
-
+    
         document.getElementById('editTaskName').value = taskName;
         document.getElementById('editTaskTime').value = taskTime24h;
         document.getElementById('editTaskModal').classList.remove('hidden');
+        document.getElementById('editTaskModal').classList.add('flex');
         document.getElementById('editTaskModal').dataset.taskId = taskId;
       }
-
+    
       // Function to close the Edit Task Modal
       function closeEditTaskModal() {
         document.getElementById('editTaskModal').classList.add('hidden');
+        document.getElementById('editTaskModal').classList.remove('flex');
       }
-
+    
       // Function to save the edited task
       async function saveEditedTask() {
         const taskName = document.getElementById('editTaskName').value;
         const taskTime = document.getElementById('editTaskTime').value;
         const taskId = document.getElementById('editTaskModal').dataset.taskId;
-
+    
         if (taskName && taskTime) {
           try {
             const response = await fetch(`/api/tasks/${taskId}`, {
@@ -283,22 +401,22 @@
               },
               body: JSON.stringify({ name: taskName, time: taskTime }),
             });
-
+    
             if (!response.ok) {
               throw new Error('Failed to update task');
             }
-
+    
             await fetchAndRenderSchedule();
             closeEditTaskModal();
           } catch (err) {
             console.error('Error updating task:', err);
-            alert('Failed to update task. Please try again.');
+            showMessage('Failed to update task. Please try again.');
           }
         } else {
-          alert('Please fill in both task name and time.');
+          showMessage('Please fill in both task name and time.');
         }
       }
-
+    
       // Function to delete a task
       async function deleteTask(taskId) {
         try {
@@ -308,31 +426,31 @@
               'Authorization': token, // Add the token
             },
           });
-
+    
           if (!response.ok) {
             throw new Error('Failed to delete task');
           }
-
+    
           await fetchAndRenderSchedule();
         } catch (err) {
           console.error('Error deleting task:', err);
-          alert('Failed to delete task. Please try again.');
+          showMessage('Failed to delete task. Please try again.');
         }
       }
-
+    
       // Function to save the schedule
       async function saveSchedule() {
         const tasks = [];
         const rows = document.querySelectorAll('#taskTableBody tr');
-
+    
         rows.forEach((row) => {
           const taskName = row.cells[0].innerText;
           const taskTime12h = row.cells[1].innerText; // Time in 12-hour format
           const taskTime24h = convertTo24HourFormat(taskTime12h); // Convert to 24-hour format
-
+    
           tasks.push({ name: taskName, time: taskTime24h }); // Save in 24-hour format
         });
-
+    
         try {
           // Send tasks to the backend
           const response = await fetch('/api/tasks/save', {
@@ -343,49 +461,51 @@
             },
             body: JSON.stringify({ tasks }),
           });
-
+    
           if (!response.ok) {
             throw new Error('Failed to save schedule');
           }
-
+    
           const data = await response.json();
-          alert('Schedule saved successfully!');
+          showMessage('Schedule saved successfully!');
         } catch (err) {
           console.error('Error saving schedule:', err);
-          alert('Failed to save schedule. Please try again.');
+          showMessage('Failed to save schedule. Please try again.');
         }
       }
-
+    
       // Add event listener to the Save button
       document.getElementById('saveButton').addEventListener('click', saveSchedule);
-
+    
       // Function to delete the entire schedule
       async function deleteSchedule() {
-        const confirmDelete = confirm(
-          "⚠️ Warning: This will delete your entire schedule and reset all progress. Are you sure you want to continue?"
-        );
-        if (confirmDelete) {
-          try {
-            const response = await fetch('/api/tasks', {
-              method: 'DELETE',
-              headers: {
-                'Authorization': token, // Add the token
-              },
-            });
-
-            if (!response.ok) {
-              throw new Error('Failed to delete schedule');
+        showConfirm("⚠️ Warning: This will delete your entire schedule and reset all progress. Are you sure you want to continue?", 
+          async function() { // Yes callback
+            try {
+              const response = await fetch('/api/tasks', {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': token, // Add the token
+                },
+              });
+    
+              if (!response.ok) {
+                throw new Error('Failed to delete schedule');
+              }
+    
+              await fetchAndRenderSchedule();
+              showMessage('Schedule deleted successfully! All progress has been reset.');
+            } catch (err) {
+              console.error('Error deleting schedule:', err);
+              showMessage('Failed to delete schedule. Please try again.');
             }
-
-            await fetchAndRenderSchedule();
-            alert('Schedule deleted successfully! All progress has been reset.');
-          } catch (err) {
-            console.error('Error deleting schedule:', err);
-            alert('Failed to delete schedule. Please try again.');
+          },
+          function() { 
+            // No callback - do nothing
           }
-        }
+        );
       }
-
+    
       // Add event listener to the Delete Schedule button
       document.getElementById('deleteScheduleButton').addEventListener('click', deleteSchedule);
     </script>
