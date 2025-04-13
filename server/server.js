@@ -35,12 +35,6 @@ const userSchema = new mongoose.Schema({
 });
 
 
-/******************************************************************************
- * Create Mongoose Models
- ******************************************************************************/
-// Create the User model
-const User = mongoose.model('User', userSchema);
-
 // Define the Task schema
 const taskSchema = new mongoose.Schema({
     name: { type: String, required: true },
@@ -48,6 +42,14 @@ const taskSchema = new mongoose.Schema({
     completed: { type: Map, of: Boolean, default: {} }, // Track completion per date
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Associate task with user
 });
+
+/******************************************************************************
+ * Create Mongoose Models
+ ******************************************************************************/
+// Create the User model
+const User = mongoose.model('User', userSchema);
+
+
 
 // Create the Task model
 const Task = mongoose.model('Task', taskSchema);
