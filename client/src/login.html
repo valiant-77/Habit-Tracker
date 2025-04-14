@@ -6,6 +6,19 @@
     <title>Login - HabitTracker</title>
     <link href="./css/style.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+          -webkit-box-shadow: 0 0 0px 1000px white inset;
+          transition: background-color 5000s ease-in-out 0s;
+          -webkit-text-fill-color: black;
+        }
+        
+        /* For Firefox */
+        input:autofill {
+          background-color: white;
+          color: black;
+        }</style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
     <!-- Navbar -->
@@ -92,9 +105,9 @@
     </div>
 
     <!-- Footer -->
-    <footer class="bg-gray-200 text-black py-6">
-        <div class="max-w-6xl mx-auto px-4 text-center text-sm">
-            <p>&copy; 2025 HabitTracker. All rights reserved.</p>
+    <footer class="bg-gray-200 text-black py-2.5 md:py-5 mt-auto">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <p class="text-sm md:text-base">&copy; 2025 HabitTracker. All rights reserved.</p>
         </div>
     </footer>
 
