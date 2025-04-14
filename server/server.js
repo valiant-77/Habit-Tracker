@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const app = express();
 const nodemailer = require('nodemailer');
-const PORT = 3000;
+const PORT = process.env.PORT;
 
 
 const transporter = nodemailer.createTransport({
