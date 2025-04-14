@@ -30,6 +30,30 @@
       .modal-overlay {
         z-index: 20; /* Higher than footer */
       }
+
+      /* Custom table layout for better spacing on desktop */
+      @media (min-width: 640px) {
+        .custom-table-layout {
+          table-layout: fixed;
+        }
+        
+        /* Column width distribution for desktop */
+        .task-column {
+          width: 35%;
+        }
+        
+        .time-column {
+          width: 35%;
+          text-align: left; /* Align time column to left on desktop */
+          padding-left: 1.5rem; /* Add some left padding */
+        }
+        
+        .actions-column {
+          width: 25%;
+          text-align: left; /* Align actions column to left on desktop */
+          padding-left: 1.5rem; 
+        }
+      }
     </style>
   </head>
   <body class="bg-gray-100">
@@ -83,12 +107,12 @@
 
       <!-- Scrollable Table Container -->
       <div class="overflow-x-auto rounded-lg bg-white shadow-lg">
-        <table class="w-full border border-gray-300">
+        <table class="w-full border border-gray-300 custom-table-layout">
           <thead class="bg-gray-200">
             <tr>
-              <th class="px-3 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Tasks</th>
-              <th class="px-3 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Time</th>
-              <th class="px-3 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700">Actions</th>
+              <th class="px-3 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 task-column">Tasks</th>
+              <th class="px-3 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 time-column">Time</th>
+              <th class="px-3 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 actions-column">Actions</th>
             </tr>
           </thead>
           <tbody id="taskTableBody" class="divide-y divide-gray-200">
@@ -105,7 +129,7 @@
     </div>
 
     <!-- Add Task Modal -->
-    <div id="addTaskModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 modal-overlay">
+    <div id="addTaskModal" class="fixed inset-0 hidden items-start justify-center bg-black bg-opacity-50 modal-overlay ">
       <div class="rounded-lg bg-white p-6 shadow-lg">
         <h2 class="mb-4 text-xl font-bold">Add Task</h2>
         <input
@@ -139,7 +163,7 @@
     </div>
 
     <!-- Edit Task Modal -->
-    <div id="editTaskModal" class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-50 modal-overlay">
+    <div id="editTaskModal" class="fixed inset-0 hidden items-start justify-center bg-black bg-opacity-50 modal-overlay ">
       <div class="rounded-lg bg-white p-6 shadow-lg">
         <h2 class="mb-4 text-xl font-bold">Edit Task</h2>
         <input
@@ -171,7 +195,6 @@
         </div>
       </div>
     </div>
-
     <!-- Footer -->
     <footer class="w-full bg-gray-200 py-4 text-center text-black">
       <div class="mx-auto max-w-6xl px-4 text-center">
@@ -285,11 +308,13 @@
             const newRow = document.createElement('tr');
             newRow.dataset.taskId = _id; // Add task ID to the row
             newRow.innerHTML = `
-              <td class="px-2 sm:px-3 py-3 text-xs sm:text-sm">${name}</td>
-              <td class="px-2 sm:px-3 py-3 text-xs sm:text-sm">${formatTime(time)}</td>
-              <td class="flex flex-col sm:flex-row gap-1 sm:gap-2 px-2 sm:px-3 py-3">
-                <button onclick="openEditTaskModal(this)" class="rounded-md border border-blue-600 px-2 py-1 text-xs sm:text-sm text-blue-600 hover:bg-blue-100">Edit</button>
-                <button onclick="deleteTask('${_id}')" class="rounded-md border border-red-600 px-2 py-1 text-xs sm:text-sm text-red-600 hover:bg-red-100">Delete</button>
+              <td class="px-2 sm:px-3 py-3 text-xs sm:text-sm task-column">${name}</td>
+              <td class="px-2 sm:px-3 py-3 text-xs sm:text-sm time-column">${formatTime(time)}</td>
+              <td class="px-2 sm:px-3 py-3 actions-column">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-start gap-1 sm:gap-4">
+                  <button onclick="openEditTaskModal(this)" class="rounded-md border border-blue-600 px-2 py-1 text-xs sm:text-sm text-blue-600 hover:bg-blue-100">Edit</button>
+                  <button onclick="deleteTask('${_id}')" class="rounded-md border border-red-600 px-2 py-1 text-xs sm:text-sm text-red-600 hover:bg-red-100">Delete</button>
+                </div>
               </td>
             `;
             taskTableBody.appendChild(newRow);
@@ -442,32 +467,33 @@
       async function saveSchedule() {
         const tasks = [];
         const rows = document.querySelectorAll('#taskTableBody tr');
-    
+
         rows.forEach((row) => {
           const taskName = row.cells[0].innerText;
-          const taskTime12h = row.cells[1].innerText; // Time in 12-hour format
-          const taskTime24h = convertTo24HourFormat(taskTime12h); // Convert to 24-hour format
-    
-          tasks.push({ name: taskName, time: taskTime24h }); // Save in 24-hour format
+          const taskTime12h = row.cells[1].innerText;
+          const taskTime24h = convertTo24HourFormat(taskTime12h);
+
+          tasks.push({ name: taskName, time: taskTime24h });
         });
-    
+
         try {
-          // Send tasks to the backend
           const response = await fetch('/api/tasks/save', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': token, // Add the token
+              'Authorization': token,
             },
             body: JSON.stringify({ tasks }),
           });
-    
+
           if (!response.ok) {
             throw new Error('Failed to save schedule');
           }
-    
-          const data = await response.json();
+
           showMessage('Schedule saved successfully!');
+          
+          // Important: Refresh the tasks to get the new IDs
+          await fetchAndRenderSchedule();
         } catch (err) {
           console.error('Error saving schedule:', err);
           showMessage('Failed to save schedule. Please try again.');

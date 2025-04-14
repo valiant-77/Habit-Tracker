@@ -1,11 +1,21 @@
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const app = express();
+const nodemailer = require('nodemailer');
 const PORT = 3000;
 
+
+const transporter = nodemailer.createTransport({
+    service: 'gmail', 
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD
+    }
+  });
 /******************************************************************************
  * Serve static files (your frontend HTML, CSS, JS)
  ******************************************************************************/
@@ -14,10 +24,10 @@ app.use(express.static(path.join(__dirname, '../client/src')));
 /******************************************************************************
  * Connect to MongoDB
  ******************************************************************************/
-mongoose.connect('mongodb://localhost:27017/habitTracker', {
-})
+const MONGODB_URI = process.env.MONGODB_URI;
+mongoose.connect(MONGODB_URI)
 .then(() => console.log('Connected to MongoDB'))
-.catch((err) => console.error('Failed to connect to MongoDB', err));
+.catch((err) => console.error('Failed to connect to MongoDB:', err));
 
 /******************************************************************************
  * Middleware to parse JSON
@@ -59,6 +69,8 @@ const Task = mongoose.model('Task', taskSchema);
  * Authentication Middleware
  ******************************************************************************/
 // Authentication middleware
+const JWT_SECRET = process.env.JWT_SECRET;
+
 const authenticate = (req, res, next) => {
     const token = req.header('Authorization');
 
@@ -68,7 +80,7 @@ const authenticate = (req, res, next) => {
 
     try {
         // Verify the token
-        const decoded = jwt.verify(token, 'your-secret-key');
+        const decoded = jwt.verify(token, JWT_SECRET);
         req.user = decoded;
         next();
     } catch (err) {
@@ -76,6 +88,12 @@ const authenticate = (req, res, next) => {
     }
 };
 
+
+// Email validation
+function validateEmail(email) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+}
 
 /******************************************************************************
  * Routes
@@ -129,7 +147,7 @@ app.post('/api/login', async (req, res) => {
         }
 
         // Generate a JWT token
-        const token = jwt.sign({ _id: user._id }, 'your-secret-key', { expiresIn: '1h' });
+        const token = jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '1h' });
 
         // Return the token
         res.json({ token });
@@ -340,6 +358,41 @@ app.get('/api/completion-rates', authenticate, async (req, res) => {
     }
 });
 
+
+/****************Route to handle feedback submissions***********************/
+app.post('/api/feedback', async (req, res) => {
+    try {
+        const { feedback, email,Name } = req.body;
+        const defaultEmail = process.env.FEEDBACK_EMAIL || process.env.EMAIL_USER; // Use a dedicated feedback email or fall back to your main email
+        
+        if (!feedback || feedback.trim() === '') {
+            return res.status(400).json({ error: 'Feedback content is required' });
+        }
+
+        // Prepare email content
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: defaultEmail,
+            subject: 'HabitTracker Feedback',
+            html: `
+                <h2>New Feedback Received</h2>
+                <p><strong>Feedback:</strong> ${feedback}</p>
+                ${Name ? `<p><strong>User Name:</strong> ${Name}</p>` : '<p><strong>User Name:</strong> Not provided</p>'}
+                ${email ? `<p><strong>User Email:</strong> ${email}</p>` : '<p><strong>User Email:</strong> Not provided</p>'}
+                <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
+            `
+        };
+        
+        // Send the email
+        await transporter.sendMail(mailOptions);
+        console.log('Feedback email sent successfully');
+        
+        res.status(200).json({ message: 'Feedback submitted successfully' });
+    } catch (err) {
+        console.error('Error submitting feedback:', err);
+        res.status(500).json({ error: 'Failed to submit feedback' });
+    }
+});
 
 /******************************************************************************
  * Start the server
