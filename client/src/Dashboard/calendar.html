@@ -21,21 +21,21 @@
             flex-shrink: 0;
         }
         
-        /* Fixed height for tasks container - exactly 9 items worth of space */
+        
         .tasks-container {
-            max-height: 324px; /* Sized for 9 items of 36px height */
+            max-height: 324px; 
             overflow-y: auto;
             scrollbar-width: thin;
         }
         
-        /* Make sure each task item has a consistent height */
+       
         .task-item, .time-item {
-            height: 36px; /* Fixed height for each item */
+            height: 36px; 
             display: flex;
             align-items: center;
         }
         
-        /* Custom scrollbar styles */
+       
         .tasks-container::-webkit-scrollbar {
             width: 4px;
         }
@@ -149,7 +149,7 @@
         const tasksColumn = document.getElementById("tasksColumn");
         const timeColumn = document.getElementById("timeColumn");
 
-        // Function to show message on screen (kept but not used for task completion)
+        // Function to show message on screen 
         function showMessage(message) {
             const messageDiv = document.getElementById('messageDisplay');
             messageDiv.innerText = message;
@@ -265,7 +265,7 @@
             try {
                 const response = await fetch('/api/tasks', {
                     headers: {
-                        'Authorization': token, // Add the token
+                        'Authorization': token, 
                     },
                 });
                 if (!response.ok) {
@@ -273,7 +273,7 @@
                 }
 
                 const tasks = await response.json();
-                console.log('Fetched tasks:', tasks); // Add this for debugging
+                console.log('Fetched tasks:', tasks); 
 
                 if (tasks.length === 0) {
                     const taskItem = document.createElement("li");
@@ -319,7 +319,7 @@
                             await updateTaskCompletionStatus(task._id, checkbox.checked, selectedDate);
                         } catch (err) {
                             console.error('Error updating completion status:', err);
-                            checkbox.checked = !checkbox.checked; // Revert the checkbox if update fails
+                            checkbox.checked = !checkbox.checked; 
                             showMessage('Failed to update task completion status. Please try again.');
                         }
                     });
@@ -370,13 +370,13 @@
 
         // Close Modal
         closeModal.addEventListener("click", () => {
-            modalOverlay.style.display = "none"; // Hide modal
+            modalOverlay.style.display = "none"; 
         });
 
         // Close modal when clicking outside
         modalOverlay.addEventListener("click", (e) => {
             if (e.target === modalOverlay) {
-                modalOverlay.style.display = "none"; // Hide modal
+                modalOverlay.style.display = "none"; 
             }
         });
 

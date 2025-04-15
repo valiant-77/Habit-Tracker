@@ -49,8 +49,8 @@ const userSchema = new mongoose.Schema({
 const taskSchema = new mongoose.Schema({
     name: { type: String, required: true },
     time: { type: String, required: true },
-    completed: { type: Map, of: Boolean, default: {} }, // Track completion per date
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Associate task with user
+    completed: { type: Map, of: Boolean, default: {} }, 
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, 
 });
 
 /******************************************************************************
@@ -98,8 +98,6 @@ function validateEmail(email) {
 /******************************************************************************
  * Routes
  ******************************************************************************/
-
-
 
 /****************Route to register a new user***********************/
 app.post('/api/register', async (req, res) => {
@@ -211,7 +209,7 @@ app.put('/api/tasks/:id', authenticate, async (req, res) => {
 
     try {
         const updatedTask = await Task.findOneAndUpdate(
-            { _id: id, user: req.user._id }, // Ensure the task belongs to the user
+            { _id: id, user: req.user._id }, 
             { name, time },
             { new: true }
         );
@@ -363,7 +361,7 @@ app.get('/api/completion-rates', authenticate, async (req, res) => {
 app.post('/api/feedback', async (req, res) => {
     try {
         const { feedback, email,Name } = req.body;
-        const defaultEmail = process.env.FEEDBACK_EMAIL || process.env.EMAIL_USER; // Use a dedicated feedback email or fall back to your main email
+        const defaultEmail = process.env.FEEDBACK_EMAIL || process.env.EMAIL_USER; 
         
         if (!feedback || feedback.trim() === '') {
             return res.status(400).json({ error: 'Feedback content is required' });

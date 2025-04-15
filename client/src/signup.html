@@ -15,7 +15,7 @@ input:-webkit-autofill:focus {
   -webkit-text-fill-color: black;
 }
 
-/* For Firefox */
+
 input:autofill {
   background-color: white;
   color: black;
@@ -123,10 +123,10 @@ input:autofill {
             const passwordInput = document.getElementById('password');
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
-                this.textContent = '🔒'; // Change to locked icon when password is visible
+                this.textContent = '🔒'; 
             } else {
                 passwordInput.type = 'password';
-                this.textContent = '👁️'; // Change back to eye icon when password is hidden
+                this.textContent = '👁️'; 
             }
         });
 

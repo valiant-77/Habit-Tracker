@@ -7,50 +7,50 @@
     <link href="../css/style.css" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      /* Custom style to keep footer at bottom */
+      
       html, body {
         min-height: 100vh;
         position: relative;
       }
       
-      /* Add padding to bottom equal to footer height */
+      
       body {
-        padding-bottom: 60px; /* Adjust if your footer is taller */
+        padding-bottom: 60px; 
       }
       
-      /* Fixed footer at bottom */
+      
       footer {
         position: absolute;
         bottom: 0;
         width: 100%;
-        z-index: 10; /* Lower than modal z-index */
+        z-index: 10; 
       }
       
-      /* Modal styles - ensure it covers everything including footer */
+     
       .modal-overlay {
-        z-index: 20; /* Higher than footer */
+        z-index: 20;
       }
 
-      /* Custom table layout for better spacing on desktop */
+     
       @media (min-width: 640px) {
         .custom-table-layout {
           table-layout: fixed;
         }
         
-        /* Column width distribution for desktop */
+        
         .task-column {
           width: 35%;
         }
         
         .time-column {
           width: 35%;
-          text-align: left; /* Align time column to left on desktop */
-          padding-left: 1.5rem; /* Add some left padding */
+          text-align: left; 
+          padding-left: 1.5rem; 
         }
         
         .actions-column {
           width: 25%;
-          text-align: left; /* Align actions column to left on desktop */
+          text-align: left; 
           padding-left: 1.5rem; 
         }
       }
@@ -307,7 +307,7 @@
     
           tasks.forEach(({ name, time, _id }) => {
             const newRow = document.createElement('tr');
-            newRow.dataset.taskId = _id; // Add task ID to the row
+            newRow.dataset.taskId = _id; 
             newRow.innerHTML = `
               <td class="px-2 sm:px-3 py-3 text-xs sm:text-sm task-column">${name}</td>
               <td class="px-2 sm:px-3 py-3 text-xs sm:text-sm time-column">${formatTime(time)}</td>
@@ -368,7 +368,7 @@
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': token, // Add the token
+                'Authorization': token, 
               },
               body: JSON.stringify({ name: taskName, time: taskTime }),
             });
@@ -512,7 +512,7 @@
               const response = await fetch('/api/tasks', {
                 method: 'DELETE',
                 headers: {
-                  'Authorization': token, // Add the token
+                  'Authorization': token, 
                 },
               });
     
