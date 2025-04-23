@@ -30,6 +30,7 @@ A full-stack web application for tracking daily habits and routines with user au
 1. **Clone the repository**
    ```
    git clone https://github.com/valiant-77/Habit-Tracker.git
+   ```
 
    ```
    cd habit-tracker
