@@ -22,7 +22,7 @@ A full-stack web application for tracking daily habits and routines with user au
 * Nodemailer for email functionality
 
 ### Frontend
-* HTML, CSS, JavaScript
+* HTML, CSS(Tailwind CSS), JavaScript
 * Frontend code is served statically from the server
 
 ## Installation and Setup
@@ -30,6 +30,8 @@ A full-stack web application for tracking daily habits and routines with user au
 1. **Clone the repository**
    ```
    git clone https://github.com/valiant-77/Habit-Tracker.git
+
+   ```
    cd habit-tracker
    ```
 
@@ -56,12 +58,9 @@ A full-stack web application for tracking daily habits and routines with user au
 5. **Access the application**
    Open your browser and navigate to `http://localhost:3000`
 
-## License
 
-MIT License
 
 ## Contact
 
 Aditya TG - adityagirish812@gmail.com
 
-Project Link: https://github.com/yourusername/habit-tracker
