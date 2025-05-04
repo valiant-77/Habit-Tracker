@@ -7,17 +7,14 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      
       html, body {
         min-height: 100vh;
         position: relative;
       }
       
-      
       body {
         padding-bottom: 60px; 
       }
-      
       
       footer {
         position: absolute;
@@ -26,30 +23,27 @@
         z-index: 10; 
       }
       
-     
       .modal-overlay {
         z-index: 20;
       }
 
-     
       @media (min-width: 640px) {
         .custom-table-layout {
           table-layout: fixed;
         }
         
-        
         .task-column {
-          width: 35%;
+          width: 30%;
         }
         
         .time-column {
-          width: 35%;
+          width: 30%;
           text-align: left; 
           padding-left: 1.5rem; 
         }
         
         .actions-column {
-          width: 25%;
+          width: 20%;
           text-align: left; 
           padding-left: 1.5rem; 
         }
@@ -129,72 +123,98 @@
     </div>
 
     <!-- Add Task Modal -->
-    <div id="addTaskModal" class="fixed inset-0 hidden items-start justify-center bg-black bg-opacity-50 modal-overlay ">
-      <div class="rounded-lg bg-white p-6 shadow-lg">
-        <h2 class="mb-4 text-xl font-bold">Add Task</h2>
-        <input
-          type="text"
-          id="taskName"
-          placeholder="Task Name"
-          class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2"
-          onkeydown="handleEnterKey(event)" 
-        />
-        <input
-          type="time"
-          id="taskTime"
-          class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2"
-          onkeydown="handleEnterKey(event)" 
-        />
-        <div class="flex justify-end">
-          <button
-            onclick="closeAddTaskModal()"
-            class="mr-2 rounded-md bg-gray-300 px-4 py-2 text-gray-800 hover:bg-gray-400"
-          >
-            Cancel
-          </button>
-          <button
-            onclick="addTask()"
-            class="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-          >
-            Add
-          </button>
-        </div>
-      </div>
+<div id="addTaskModal" class="fixed inset-0 hidden items-start justify-center bg-black bg-opacity-50 modal-overlay">
+  <div class="rounded-lg bg-white p-6 shadow-lg" style="width: 500px;">
+    <h2 class="mb-4 text-xl font-bold">Add Task</h2>
+    <input
+      type="text"
+      id="taskName"
+      placeholder="Task Name"
+      class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2"
+      onkeydown="handleEnterKey(event)" 
+    />
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700 mb-1">Start Time (required)</label>
+      <input
+        type="time"
+        id="taskTime"
+        class="w-full rounded-md border border-gray-300 px-4 py-2"
+        onkeydown="handleEnterKey(event)"
+        required
+      />
     </div>
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700 mb-1">End Time (Optional)</label>
+      <input
+        type="time"
+        id="taskEndTime"
+        class="w-full rounded-md border border-gray-300 px-4 py-2"
+        onkeydown="handleEnterKey(event)"
+      />
+    </div>
+    <div class="flex justify-end">
+      <button
+        onclick="closeAddTaskModal()"
+        class="mr-2 rounded-md bg-gray-300 px-4 py-2 text-gray-800 hover:bg-gray-400"
+      >
+        Cancel
+      </button>
+      <button
+        onclick="addTask()"
+        class="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+      >
+        Add
+      </button>
+    </div>
+  </div>
+</div>
 
-    <!-- Edit Task Modal -->
-    <div id="editTaskModal" class="fixed inset-0 hidden items-start justify-center bg-black bg-opacity-50 modal-overlay ">
-      <div class="rounded-lg bg-white p-6 shadow-lg">
-        <h2 class="mb-4 text-xl font-bold">Edit Task</h2>
-        <input
-          type="text"
-          id="editTaskName"
-          placeholder="Task Name"
-          class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2"
-          onkeydown="handleEditEnterKey(event)" 
-        />
-        <input
-          type="time"
-          id="editTaskTime"
-          class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2"
-          onkeydown="handleEditEnterKey(event)" 
-        />
-        <div class="flex justify-end">
-          <button
-            onclick="closeEditTaskModal()"
-            class="mr-2 rounded-md bg-gray-300 px-4 py-2 text-gray-800 hover:bg-gray-400"
-          >
-            Cancel
-          </button>
-          <button
-            onclick="saveEditedTask()"
-            class="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
-      </div>
+<!-- Edit Task Modal -->
+<div id="editTaskModal" class="fixed inset-0 hidden items-start justify-center bg-black bg-opacity-50 modal-overlay">
+  <div class="rounded-lg bg-white p-6 shadow-lg" style="width: 500px;">
+    <h2 class="mb-4 text-xl font-bold">Edit Task</h2>
+    <input
+      type="text"
+      id="editTaskName"
+      placeholder="Task Name"
+      class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2"
+      onkeydown="handleEditEnterKey(event)" 
+    />
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700 mb-1">End Time (Optional)</label>
+      <input
+        type="time"
+        id="editTaskTime"
+        class="w-full rounded-md border border-gray-300 px-4 py-2"
+        onkeydown="handleEditEnterKey(event)"
+        required
+      />
     </div>
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700 mb-1">Start Time (required)</label>
+      <input
+        type="time"
+        id="editTaskEndTime"
+        class="w-full rounded-md border border-gray-300 px-4 py-2"
+        onkeydown="handleEditEnterKey(event)"
+      />
+    </div>
+    <div class="flex justify-end">
+      <button
+        onclick="closeEditTaskModal()"
+        class="mr-2 rounded-md bg-gray-300 px-4 py-2 text-gray-800 hover:bg-gray-400"
+      >
+        Cancel
+      </button>
+      <button
+        onclick="saveEditedTask()"
+        class="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+      >
+        Save
+      </button>
+    </div>
+  </div>
+</div>
     
     <!-- Footer -->
     <footer class="bg-gray-200 text-black py-2.5 md:py-5 mt-auto">
@@ -260,42 +280,71 @@
       }
     
       // Helper function to format time in AM/PM
-      function formatTime(time) {
+      function formatTime(time, endTime) {
         if (!time) return ""; // Handle empty time
+        
         const [hours, minutes] = time.split(":");
         let formattedHours = parseInt(hours, 10);
         const ampm = formattedHours >= 12 ? "PM" : "AM";
         formattedHours = formattedHours % 12 || 12; // Convert 0 to 12
-        return `${formattedHours}:${minutes} ${ampm}`;
+        const startFormatted = `${formattedHours}:${minutes} ${ampm}`;
+        
+        if (endTime) {
+          // Format end time
+          const [endHours, endMinutes] = endTime.split(":");
+          let formattedEndHours = parseInt(endHours, 10);
+          const endAmpm = formattedEndHours >= 12 ? "PM" : "AM";
+          formattedEndHours = formattedEndHours % 12 || 12; // Convert 0 to 12
+          const endFormatted = `${formattedEndHours}:${endMinutes} ${endAmpm}`;
+          
+          return `${startFormatted} - ${endFormatted}`;
+        }
+        
+        return startFormatted;
       }
     
       // Helper function to convert 12-hour time to 24-hour time
       function convertTo24HourFormat(time12h) {
-  if (!time12h) return ""; // Handle empty time
-  const [time, modifier] = time12h.split(" "); // Split time and AM/PM
-  let [hours, minutes] = time.split(":");
-  
-  // Convert hours to number for calculations
-  let hoursNum = parseInt(hours, 10);
-  
-  // Handle 12 AM/PM special cases
-  if (hoursNum === 12) {
-    hoursNum = modifier === "AM" ? 0 : 12;
-  } else if (modifier === "PM") {
-    hoursNum += 12;
-  }
-  
-  // Format with leading zeros for both hours and minutes
-  const formattedHours = hoursNum.toString().padStart(2, '0');
-  return `${formattedHours}:${minutes}`;
-}
+        if (!time12h) return ""; // Handle empty time
+        
+        // Check if the time has a range format (start - end)
+        if (time12h.includes(" - ")) {
+          // We only need to extract the start time for the input field
+          time12h = time12h.split(" - ")[0];
+        }
+        
+        const [time, modifier] = time12h.split(" "); // Split time and AM/PM
+        let [hours, minutes] = time.split(":");
+        
+        // Convert hours to number for calculations
+        let hoursNum = parseInt(hours, 10);
+        
+        // Handle 12 AM/PM special cases
+        if (hoursNum === 12) {
+          hoursNum = modifier === "AM" ? 0 : 12;
+        } else if (modifier === "PM") {
+          hoursNum += 12;
+        }
+        
+        // Format with leading zeros for both hours and minutes
+        const formattedHours = hoursNum.toString().padStart(2, '0');
+        return `${formattedHours}:${minutes}`;
+      }
+      
+      // Extract end time from formatted time range (if it exists)
+      function extractEndTime(timeRange) {
+        if (!timeRange || !timeRange.includes(" - ")) return "";
+        
+        const endTimePart = timeRange.split(" - ")[1];
+        return convertTo24HourFormat(endTimePart);
+      }
     
       // Function to fetch and render the schedule
       async function fetchAndRenderSchedule() {
         try {
           const response = await fetch('/api/tasks', {
             headers: {
-              'Authorization': token, // Add the token
+              'Authorization': token,
             },
           });
           if (!response.ok) {
@@ -305,12 +354,14 @@
           const taskTableBody = document.getElementById('taskTableBody');
           taskTableBody.innerHTML = "";
     
-          tasks.forEach(({ name, time, _id }) => {
+          tasks.forEach(({ name, time, endTime, _id }) => {
             const newRow = document.createElement('tr');
-            newRow.dataset.taskId = _id; 
+            newRow.dataset.taskId = _id;
+            newRow.dataset.endTime = endTime || ""; // Store end time in dataset
+            
             newRow.innerHTML = `
               <td class="px-2 sm:px-3 py-3 text-xs sm:text-sm task-column">${name}</td>
-              <td class="px-2 sm:px-3 py-3 text-xs sm:text-sm time-column">${formatTime(time)}</td>
+              <td class="px-2 sm:px-3 py-3 text-xs sm:text-sm time-column">${formatTime(time, endTime)}</td>
               <td class="px-2 sm:px-3 py-3 actions-column">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-start gap-1 sm:gap-4">
                   <button onclick="openEditTaskModal(this)" class="rounded-md border border-blue-600 px-2 py-1 text-xs sm:text-sm text-blue-600 hover:bg-blue-100">Edit</button>
@@ -341,6 +392,7 @@
         document.getElementById('addTaskModal').classList.remove('flex');
         document.getElementById('taskName').value = ""; // Clear task name
         document.getElementById('taskTime').value = ""; // Clear task time
+        document.getElementById('taskEndTime').value = ""; // Clear end time
       }
     
       // Function to handle Enter key press in the Add Task Modal
@@ -361,16 +413,27 @@
       async function addTask() {
         const taskName = document.getElementById('taskName').value;
         const taskTime = document.getElementById('taskTime').value;
+        const taskEndTime = document.getElementById('taskEndTime').value;
     
         if (taskName && taskTime) {
           try {
+            const taskData = { 
+              name: taskName, 
+              time: taskTime
+            };
+            
+            // Only add endTime if it's provided
+            if (taskEndTime) {
+              taskData.endTime = taskEndTime;
+            }
+            
             const response = await fetch('/api/tasks', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': token, 
               },
-              body: JSON.stringify({ name: taskName, time: taskTime }),
+              body: JSON.stringify(taskData),
             });
     
             if (!response.ok) {
@@ -384,7 +447,7 @@
             showMessage('Failed to save task. Please try again.');
           }
         } else {
-          showMessage('Please fill in both task name and time.');
+          showMessage('Please fill in both task name and start time.');
         }
       }
     
@@ -392,14 +455,27 @@
       function openEditTaskModal(button) {
         const row = button.closest('tr');
         const taskName = row.cells[0].innerText;
-        const taskTime12h = row.cells[1].innerText;
+        const displayedTime = row.cells[1].innerText;
         const taskId = row.dataset.taskId;
-    
-        // Convert 12-hour time to 24-hour time for the input field
-        const taskTime24h = convertTo24HourFormat(taskTime12h);
+        const savedEndTime = row.dataset.endTime; // Get stored end time
+        
+        // Handle the time formatting
+        let startTime24h, endTime24h;
+        
+        if (displayedTime.includes(" - ")) {
+          // Time range format: extract start and end times
+          const [startTime12h, endTime12h] = displayedTime.split(" - ");
+          startTime24h = convertTo24HourFormat(startTime12h);
+          endTime24h = convertTo24HourFormat(endTime12h);
+        } else {
+          // Only start time
+          startTime24h = convertTo24HourFormat(displayedTime);
+          endTime24h = savedEndTime; // Use saved end time if available
+        }
     
         document.getElementById('editTaskName').value = taskName;
-        document.getElementById('editTaskTime').value = taskTime24h;
+        document.getElementById('editTaskTime').value = startTime24h;
+        document.getElementById('editTaskEndTime').value = endTime24h;
         document.getElementById('editTaskModal').classList.remove('hidden');
         document.getElementById('editTaskModal').classList.add('flex');
         document.getElementById('editTaskModal').dataset.taskId = taskId;
@@ -415,17 +491,28 @@
       async function saveEditedTask() {
         const taskName = document.getElementById('editTaskName').value;
         const taskTime = document.getElementById('editTaskTime').value;
+        const taskEndTime = document.getElementById('editTaskEndTime').value;
         const taskId = document.getElementById('editTaskModal').dataset.taskId;
     
         if (taskName && taskTime) {
           try {
+            const taskData = { 
+              name: taskName, 
+              time: taskTime
+            };
+            
+            // Only add endTime if it's provided
+            if (taskEndTime) {
+              taskData.endTime = taskEndTime;
+            }
+            
             const response = await fetch(`/api/tasks/${taskId}`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': token, // Add the token
+                'Authorization': token,
               },
-              body: JSON.stringify({ name: taskName, time: taskTime }),
+              body: JSON.stringify(taskData),
             });
     
             if (!response.ok) {
@@ -439,7 +526,7 @@
             showMessage('Failed to update task. Please try again.');
           }
         } else {
-          showMessage('Please fill in both task name and time.');
+          showMessage('Please fill in both task name and start time.');
         }
       }
     
@@ -449,7 +536,7 @@
           const response = await fetch(`/api/tasks/${taskId}`, {
             method: 'DELETE',
             headers: {
-              'Authorization': token, // Add the token
+              'Authorization': token,
             },
           });
     
@@ -471,10 +558,33 @@
 
         rows.forEach((row) => {
           const taskName = row.cells[0].innerText;
-          const taskTime12h = row.cells[1].innerText;
-          const taskTime24h = convertTo24HourFormat(taskTime12h);
-
-          tasks.push({ name: taskName, time: taskTime24h });
+          const displayedTime = row.cells[1].innerText;
+          const savedEndTime = row.dataset.endTime;
+          
+          let startTime24h, endTime24h;
+          
+          if (displayedTime.includes(" - ")) {
+            // Time range format: extract start and end times
+            const [startTime12h, endTime12h] = displayedTime.split(" - ");
+            startTime24h = convertTo24HourFormat(startTime12h);
+            endTime24h = convertTo24HourFormat(endTime12h);
+          } else {
+            // Only start time
+            startTime24h = convertTo24HourFormat(displayedTime);
+            endTime24h = savedEndTime; // Use saved end time if available
+          }
+          
+          const taskData = { 
+            name: taskName, 
+            time: startTime24h
+          };
+          
+          // Only add endTime if it exists
+          if (endTime24h) {
+            taskData.endTime = endTime24h;
+          }
+          
+          tasks.push(taskData);
         });
 
         try {

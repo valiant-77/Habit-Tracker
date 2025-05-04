@@ -51,6 +51,7 @@ const userSchema = new mongoose.Schema({
 const taskSchema = new mongoose.Schema({
     name: { type: String, required: true },
     time: { type: String, required: true },
+    endTime: { type: String, required: false }, // Optional end time
     completed: { type: Map, of: Boolean, default: {} }, 
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, 
 });
@@ -185,14 +186,25 @@ app.get('/api/tasks', authenticate, async (req, res) => {
 
 /****************  Route to add a new task for the authenticated user***********************/
 app.post('/api/tasks', authenticate, async (req, res) => {
-    const { name, time } = req.body;
+    const { name, time, endTime } = req.body;
 
     if (!name || !time) {
         return res.status(400).json({ error: 'Task name and time are required' });
     }
 
     try {
-        const newTask = new Task({ name, time, user: req.user._id });
+        const taskData = { 
+            name, 
+            time, 
+            user: req.user._id 
+        };
+        
+        // Only add endTime if it's provided
+        if (endTime) {
+            taskData.endTime = endTime;
+        }
+        
+        const newTask = new Task(taskData);
         await newTask.save();
         res.status(201).json(newTask);
     } catch (err) {
@@ -200,19 +212,30 @@ app.post('/api/tasks', authenticate, async (req, res) => {
     }
 });
 
+
 /****************Route to update a task for the authenticated user***********************/
 app.put('/api/tasks/:id', authenticate, async (req, res) => {
     const { id } = req.params;
-    const { name, time } = req.body;
+    const { name, time, endTime } = req.body;
 
     if (!name || !time) {
         return res.status(400).json({ error: 'Task name and time are required' });
     }
 
     try {
+        const updateData = { name, time };
+        
+        // Include endTime in the update only if provided
+        if (endTime) {
+            updateData.endTime = endTime;
+        } else {
+            // If endTime is not provided, remove it from the document
+            updateData.$unset = { endTime: "" };
+        }
+        
         const updatedTask = await Task.findOneAndUpdate(
             { _id: id, user: req.user._id }, 
-            { name, time },
+            updateData,
             { new: true }
         );
 
@@ -255,12 +278,21 @@ app.post('/api/tasks/save', authenticate, async (req, res) => {
         // Delete existing tasks for the user
         await Task.deleteMany({ user: req.user._id });
 
-        // Save new tasks
-        const newTasks = tasks.map(task => ({
-            name: task.name,
-            time: task.time,
-            user: req.user._id,
-        }));
+        // Save new tasks with endTime if provided
+        const newTasks = tasks.map(task => {
+            const taskData = {
+                name: task.name,
+                time: task.time,
+                user: req.user._id,
+            };
+            
+            // Only add endTime if it's provided
+            if (task.endTime) {
+                taskData.endTime = task.endTime;
+            }
+            
+            return taskData;
+        });
 
         await Task.insertMany(newTasks);
 

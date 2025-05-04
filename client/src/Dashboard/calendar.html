@@ -103,7 +103,7 @@
                 <div class="flex-1 pr-2">
                     <h3 class="font-semibold text-gray-700">Tasks</h3>
                 </div>
-                <div class="w-20 md:w-24 text-right">
+                <div class="w-32 md:w-36 text-right">
                     <h3 class="font-semibold text-gray-700">Time</h3>
                 </div>
             </div>
@@ -119,7 +119,7 @@
                     </div>
 
                     <!-- Time Column -->
-                    <div class="w-20 md:w-24 text-right">
+                    <div class="w-32 md:w-36 text-right">
                         <ul id="timeColumn">
                             <!-- Times will be added dynamically -->
                         </ul>
@@ -177,6 +177,20 @@
             const ampm = formattedHours >= 12 ? "PM" : "AM";
             formattedHours = formattedHours % 12 || 12; // Convert 0 to 12
             return `${formattedHours}:${minutes} ${ampm}`;
+        }
+        
+        // Helper function to format time display with start and end times
+        function formatTimeDisplay(startTime, endTime) {
+            if (!startTime) return "";
+            
+            const formattedStart = formatTime(startTime);
+            
+            if (endTime) {
+                const formattedEnd = formatTime(endTime);
+                return `${formattedStart}-${formattedEnd}`;
+            }
+            
+            return formattedStart;
         }
 
         // Function to check if device is mobile
@@ -306,10 +320,13 @@
                     `;
                     tasksColumn.appendChild(taskItem);
 
-                    // Time Item
+                    // Time Item with start and end time
                     const timeItem = document.createElement("li");
-                    timeItem.className = "time-item text-sm md:text-base text-gray-600 justify-end";
-                    timeItem.textContent = formatTime(task.time);
+                    timeItem.className = "time-item text-xs md:text-sm text-gray-600 justify-end whitespace-nowrap";
+                    
+                    // Format time to show both start and end time when available
+                    timeItem.textContent = formatTimeDisplay(task.time, task.endTime);
+                    
                     timeColumn.appendChild(timeItem);
 
                     // Add event listener to the checkbox
