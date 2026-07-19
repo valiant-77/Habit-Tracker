@@ -1,0 +1,9 @@
+1-Make a copy and dockerize that
+2- migrate to react
+3-make all neccesary changes in that and push that as main later
+
+
+pages changes
+1- Add dark mode
+2- give option to go to other pages in nav bar
+3- in schedule the latest task will be added on top give option to drag and arrange the tasks
