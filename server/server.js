@@ -421,9 +421,16 @@ app.post('/api/feedback', async (req, res) => {
         
         res.status(200).json({ message: 'Feedback submitted successfully' });
     } catch (err) {
-        console.error('Error submitting feedback:', err);
-        res.status(500).json({ error: 'Failed to submit feedback' });
-    }
+    console.error("Feedback Error:");
+    console.error("Message:", err.message);
+    console.error("Code:", err.code);
+    console.error("Response:", err.response);
+    console.error(err);
+
+    res.status(500).json({
+        error: err.message
+    });
+}
 });
 
 /******************************************************************************
