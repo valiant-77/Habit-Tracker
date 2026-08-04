@@ -10,12 +10,14 @@ const PORT = process.env.PORT;
 
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail', 
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD
-    }
-  });
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+});
 /******************************************************************************
  * Serve static files (your frontend HTML, CSS, JS)
  ******************************************************************************/
