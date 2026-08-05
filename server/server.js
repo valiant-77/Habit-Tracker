@@ -10,14 +10,12 @@ const PORT = process.env.PORT;
 
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
+    service: 'gmail', 
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD
+    }
+  });
 /******************************************************************************
  * Serve static files (your frontend HTML, CSS, JS)
  ******************************************************************************/
@@ -423,16 +421,9 @@ app.post('/api/feedback', async (req, res) => {
         
         res.status(200).json({ message: 'Feedback submitted successfully' });
     } catch (err) {
-    console.error("Feedback Error:");
-    console.error("Message:", err.message);
-    console.error("Code:", err.code);
-    console.error("Response:", err.response);
-    console.error(err);
-
-    res.status(500).json({
-        error: err.message
-    });
-}
+        console.error('Error submitting feedback:', err);
+        res.status(500).json({ error: 'Failed to submit feedback' });
+    }
 });
 
 /******************************************************************************
