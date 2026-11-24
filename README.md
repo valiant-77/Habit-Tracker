@@ -51,10 +51,12 @@ A full-stack web application for tracking daily habits and routines with user au
    FEEDBACK_EMAIL=email_to_receive_feedback
    ```
 
-4. **Start the server**
+4. **Start the app** (MongoDB via Docker, then backend + frontend)
    ```
    npm start
    ```
+
+   Run this from the project root, not from `server/`. Docker must be running.
 
 5. **Access the application**
    Open your browser and navigate to `http://localhost:3000`

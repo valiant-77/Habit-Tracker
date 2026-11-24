@@ -1,6 +1,6 @@
-require('dotenv').config();
-const express = require('express');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -27,9 +27,26 @@ app.use(express.static(path.join(__dirname, '../client/src')));
  * Connect to MongoDB
  ******************************************************************************/
 const MONGODB_URI = process.env.MONGODB_URI;
-mongoose.connect(MONGODB_URI)
-.then(() => console.log('Connected to MongoDB'))
-.catch((err) => console.error('Failed to connect to MongoDB:', err));
+
+async function connectToMongoDB() {
+    const retries = 10;
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            await mongoose.connect(MONGODB_URI);
+            console.log('Connected to MongoDB');
+            return;
+        } catch (err) {
+            console.error(`MongoDB connect attempt ${attempt}/${retries} failed:`, err.message);
+            if (attempt === retries) {
+                console.error('Failed to connect to MongoDB after retries');
+                return;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+    }
+}
+
+connectToMongoDB();
 
 /******************************************************************************
  * Middleware to parse JSON
