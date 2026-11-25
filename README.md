@@ -51,12 +51,15 @@ A full-stack web application for tracking daily habits and routines with user au
    FEEDBACK_EMAIL=email_to_receive_feedback
    ```
 
-4. **Start the app** (MongoDB via Docker, then backend + frontend)
+4. **Start the app**
    ```
    npm start
    ```
 
-   Run this from the project root, not from `server/`. Docker must be running.
+   Run this from the project root, not from `server/`.
+
+   Locally, start MongoDB first (`npm run db:up`, Docker required) or use `npm run start:local`.
+   On Render, `npm start` only runs the Node server — there is no Docker. Set `MONGODB_URI` (and the other env vars) in the Render dashboard.
 
 5. **Access the application**
    Open your browser and navigate to `http://localhost:3000`

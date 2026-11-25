@@ -6,7 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "start": "docker compose up -d && node server/server.js",
+    "start": "node server/server.js",
+    "start:local": "docker compose up -d && node server/server.js",
     "dev": "docker compose up -d && nodemon server/server.js"
   },
   "keywords": [],
