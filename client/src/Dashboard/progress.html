@@ -4,47 +4,123 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Check Progress - HabitTracker</title>
-    
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem('theme');
+                if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' };
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        html.dark { color-scheme: dark; }
+        #appSidebar { top: 4rem; width: 15rem; transition: width 0.2s ease, transform 0.2s ease; }
+        #appSidebar.collapsed { width: 4.5rem; }
+        #appSidebar.collapsed .sidebar-label { display: none; }
+        #appSidebar.collapsed .sidebar-link { justify-content: center; padding-left: 0.5rem; padding-right: 0.5rem; }
+        #sidebarEdgeIcon { transition: transform 0.2s ease; }
+        #appSidebar.collapsed #sidebarEdgeIcon { transform: rotate(180deg); }
+        #appMain, #appFooter { transition: margin-left 0.2s ease; }
+        @media (min-width: 768px) {
+            #appMain, #appFooter { margin-left: 15rem; }
+            #appMain.rail, #appFooter.rail { margin-left: 4.5rem; }
+        }
+        @media (max-width: 767px) {
+            #appSidebar, #appSidebar.collapsed { width: 15rem; }
+            #appHeader {
+                height: calc(3rem + env(safe-area-inset-top, 0px));
+                padding-top: env(safe-area-inset-top, 0px);
+                box-sizing: border-box;
+            }
+            #appSidebar {
+                top: calc(3rem + env(safe-area-inset-top, 0px));
+            }
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <nav class="bg-white shadow-lg">
-        <div class="max-w-6xl mx-auto px-4">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <span class="text-xl font-bold text-gray-800">HabitTracker</span>
-                </div>
-                <div class="flex items-center">
-                    <a href="dashboard.html" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300">Back to Dashboard</a>
-                </div>
-            </div>
+<body class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
+    <header id="appHeader" class="sticky top-0 z-50 h-12 md:h-16 bg-white/90 dark:bg-slate-950/80 backdrop-blur-sm shadow-md dark:shadow-none dark:border-b dark:border-slate-800 flex items-center justify-between px-4">
+        <div class="flex items-center gap-2 md:gap-3 min-w-0">
+            <button type="button" id="sidebarMenuButton" class="p-2 -ml-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 md:hidden" onclick="toggleSidebar()" aria-label="Toggle sidebar" aria-controls="appSidebar" aria-expanded="false">
+                <svg class="w-6 h-6 text-gray-700 dark:text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+            <a href="dashboard.html" class="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent shrink-0">HabitTracker</a>
+            <span class="hidden sm:inline text-gray-300 dark:text-slate-600">|</span>
+            <span class="hidden sm:inline text-base md:text-lg font-semibold text-gray-700 dark:text-gray-200 truncate">Progress</span>
         </div>
-    </nav>
+        <div class="flex items-center space-x-2 md:space-x-4 shrink-0">
+            <button type="button" id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-200" aria-label="Toggle dark mode">
+                <svg id="themeIconMoon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                <svg id="themeIconSun" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            </button>
+            <button type="button" id="logoutButton" class="px-2 py-1.5 md:px-4 md:py-2 rounded-md bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs md:text-base hover:from-blue-700 hover:to-purple-700 transition-colors shadow-sm">Logout</button>
+        </div>
+    </header>
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden" onclick="toggleSidebar(false)"></div>
+    <aside id="appSidebar" class="fixed left-0 bottom-0 z-40 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col transform -translate-x-full md:translate-x-0">
+        <button type="button" id="sidebarEdgeToggle" onclick="toggleSidebar()" aria-label="Collapse sidebar" class="hidden md:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 shadow-md text-gray-500 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-400 transition-colors z-10">
+            <svg id="sidebarEdgeIcon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <nav class="flex-1 p-2 space-y-1">
+            <a href="dashboard.html" title="Dashboard" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                <span class="sidebar-label">Dashboard</span>
+            </a>
+            <a href="schedule.html" title="Schedule" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                <span class="sidebar-label">Schedule</span>
+            </a>
+            <a href="calendar.html" title="Tasks" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                <span class="sidebar-label">Tasks</span>
+            </a>
+            <a href="progress.html" title="Progress" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-50 text-blue-700 font-medium dark:bg-blue-950 dark:text-blue-300">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                <span class="sidebar-label">Progress</span>
+            </a>
+        </nav>
+    </aside>
 
-    <div class="max-w-6xl mx-auto px-4 py-8">
-        <!-- Monthly Progress Section - Updated for better responsiveness -->
-        <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg mb-8">
-            <h2 class="text-xl sm:text-2xl font-bold mb-4">Monthly Progress</h2>
-            <div class="flex flex-col sm:flex-row items-center justify-between mb-4">
-                <button id="prevMonth" class="w-full sm:w-auto mb-2 sm:mb-0 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors">&larr; Previous Month</button>
-                <h4 id="monthLabel" class="text-lg sm:text-xl font-semibold mb-2 sm:mb-0"></h4>
-                <button id="nextMonth" class="w-full sm:w-auto px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors">Next Month &rarr;</button>
+    <div id="appMain" class="min-h-screen flex flex-col">
+
+    <div class="max-w-6xl mx-auto px-4 py-8 w-full">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Your Progress</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm md:text-base">See how consistent you've been over time.</p>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-5 sm:p-8 rounded-2xl shadow-lg mb-8">
+            <h2 class="text-xl sm:text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100 text-center sm:text-left">Monthly Progress</h2>
+            <div class="flex items-center justify-center gap-4 mb-2">
+                <button id="prevMonth" class="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-slate-700 rounded-full hover:bg-blue-50 dark:hover:bg-slate-600 text-gray-600 dark:text-gray-300 hover:text-blue-600 transition-all">&larr;</button>
+                <h4 id="monthLabel" class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 min-w-[10rem] text-center"></h4>
+                <button id="nextMonth" class="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-slate-700 rounded-full hover:bg-blue-50 dark:hover:bg-slate-600 text-gray-600 dark:text-gray-300 hover:text-blue-600 transition-all">&rarr;</button>
             </div>
-            <!-- Chart container with responsive height -->
-            <div class="w-full h-64 sm:h-80 md:h-96 lg:h-400">
+            <p class="text-center mb-4">
+                <span id="monthAvg" class="inline-block px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200 font-semibold text-sm sm:text-base">—</span>
+            </p>
+            <div class="w-full h-64 sm:h-80 md:h-96">
                 <canvas id="monthlyProgressChart"></canvas>
             </div>
         </div>
 
-        <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
-            <h2 class="text-xl sm:text-2xl font-bold mb-4">Yearly Progress Heatmap</h2>
-            <div class="flex flex-col sm:flex-row items-center justify-between mb-6">
-                <button id="prevYear" class="w-full sm:w-auto mb-2 sm:mb-0 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors">&larr; Previous Year</button>
-                <h4 id="yearLabel" class="text-lg sm:text-xl font-semibold mb-2 sm:mb-0"></h4>
-                <button id="nextYear" class="w-full sm:w-auto px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors">Next Year &rarr;</button>
+        <div class="bg-white dark:bg-slate-800 p-5 sm:p-8 rounded-2xl shadow-lg">
+            <h2 class="text-xl sm:text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100 text-center sm:text-left">Yearly Progress Heatmap</h2>
+            <div class="flex items-center justify-center gap-4 mb-2">
+                <button id="prevYear" class="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-slate-700 rounded-full hover:bg-purple-50 dark:hover:bg-slate-600 text-gray-600 dark:text-gray-300 hover:text-purple-600 transition-all">&larr;</button>
+                <h4 id="yearLabel" class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 min-w-[8rem] text-center"></h4>
+                <button id="nextYear" class="w-10 h-10 flex items-center justify-center bg-gray-50 dark:bg-slate-700 rounded-full hover:bg-purple-50 dark:hover:bg-slate-600 text-gray-600 dark:text-gray-300 hover:text-purple-600 transition-all">&rarr;</button>
             </div>
-            <!-- Add a container with fixed height and overflow -->
+            <p class="text-center mb-6">
+                <span id="yearAvg" class="inline-block px-4 py-2 rounded-full bg-purple-50 dark:bg-purple-950 text-purple-800 dark:text-purple-200 font-semibold text-sm sm:text-base">—</span>
+            </p>
             <div class="overflow-x-auto">
                 <div id="heatmap" class="flex min-w-max"></div>
             </div>
@@ -53,13 +129,77 @@
 
     
     <!-- Footer -->
-    <footer class="bg-gray-200 text-black py-2.5 md:py-5 mt-auto">
+    <footer class="bg-white/60 dark:bg-slate-900/60 border-t border-gray-200 dark:border-slate-700 py-2.5 md:py-5 mt-auto">
         <div class="max-w-6xl mx-auto px-4 text-center">
-            <p class="text-sm md:text-base">&copy; 2025 HabitTracker. All rights reserved.</p>
+            <p class="text-sm md:text-base text-gray-500 dark:text-gray-400">&copy; 2025 HabitTracker. All rights reserved.</p>
         </div>
     </footer>
+    </div>
 
     <script>
+        function isDarkTheme() {
+            return document.documentElement.classList.contains('dark');
+        }
+        function syncThemeToggle() {
+            const dark = isDarkTheme();
+            const sun = document.getElementById('themeIconSun');
+            const moon = document.getElementById('themeIconMoon');
+            if (sun) sun.classList.toggle('hidden', !dark);
+            if (moon) moon.classList.toggle('hidden', dark);
+            const btn = document.getElementById('themeToggle');
+            if (btn) btn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+        }
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDarkTheme() ? 'dark' : 'light');
+            syncThemeToggle();
+            window.dispatchEvent(new Event('themechange'));
+        }
+        syncThemeToggle();
+        function isMobileNav() {
+            return window.innerWidth < 768;
+        }
+        function toggleSidebar(open) {
+            const sidebar = document.getElementById('appSidebar');
+            const edgeBtn = document.getElementById('sidebarEdgeToggle');
+            const overlay = document.getElementById('sidebarOverlay');
+            const main = document.getElementById('appMain');
+            const footer = document.getElementById('appFooter');
+            const mobile = isMobileNav();
+            if (typeof open !== 'boolean') {
+                open = mobile ? sidebar.classList.contains('-translate-x-full') : sidebar.classList.contains('collapsed');
+            }
+            if (mobile) {
+                sidebar.classList.remove('collapsed');
+                sidebar.classList.toggle('-translate-x-full', !open);
+                overlay.classList.toggle('hidden', !open);
+                if (main) main.classList.remove('rail');
+                if (footer) footer.classList.remove('rail');
+            } else {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.toggle('collapsed', !open);
+                overlay.classList.add('hidden');
+                if (main) main.classList.toggle('rail', !open);
+                if (footer) footer.classList.toggle('rail', !open);
+                localStorage.setItem('sidebarOpen', open ? '1' : '0');
+            }
+            if (edgeBtn) {
+                const isExpanded = !sidebar.classList.contains('collapsed');
+                edgeBtn.setAttribute('aria-label', isExpanded ? 'Collapse sidebar' : 'Expand sidebar');
+            }
+        }
+        (function initSidebar() {
+            if (isMobileNav()) toggleSidebar(false);
+            else toggleSidebar(localStorage.getItem('sidebarOpen') !== '0');
+        })();
+        document.getElementById('logoutButton').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('token');
+                window.location.href = '../index.html';
+            }
+        });
+
         // Fetch completion rates function
         async function fetchCompletionRates(startDate, endDate) {
             try {
@@ -180,6 +320,23 @@
             }
         });
 
+        function applyChartTheme() {
+            const dark = document.documentElement.classList.contains('dark');
+            const tick = dark ? '#cbd5e1' : '#4b5563';
+            const title = dark ? '#e2e8f0' : '#111827';
+            const grid = dark ? 'rgba(148, 163, 184, 0.2)' : 'rgba(0, 0, 0, 0.1)';
+            monthlyProgressChart.options.scales.x.ticks.color = tick;
+            monthlyProgressChart.options.scales.y.ticks.color = tick;
+            monthlyProgressChart.options.scales.x.title.color = title;
+            monthlyProgressChart.options.scales.y.title.color = title;
+            monthlyProgressChart.options.scales.x.grid = { color: grid };
+            monthlyProgressChart.options.scales.y.grid = { color: grid };
+            monthlyProgressChart.options.plugins.legend.labels.color = title;
+            monthlyProgressChart.update();
+        }
+        applyChartTheme();
+        window.addEventListener('themechange', applyChartTheme);
+
         // Shared variables
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -218,11 +375,11 @@
             return Math.floor(offsetDate / 7) + 1;
         }
 
-        // Function to get heatmap color based on completion percentage
-        function getHeatmapColor(value) {
-            if (value === 0) return 'bg-gray-200';
-            if (value <= 25) return 'bg-blue-100';
-            if (value <= 50) return 'bg-blue-300';
+        function getHeatmapColor(value, isFuture) {
+            if (isFuture) return 'bg-gray-50 border border-gray-100 dark:bg-slate-900 dark:border-slate-700';
+            if (value === 0) return 'bg-gray-200 dark:bg-slate-700';
+            if (value <= 25) return 'bg-blue-100 dark:bg-blue-900';
+            if (value <= 50) return 'bg-blue-300 dark:bg-blue-700';
             if (value <= 75) return 'bg-blue-500';
             return 'bg-blue-700 text-white';
         }
@@ -237,7 +394,12 @@
             
             console.log('Fetching monthly data for:', startDate, 'to', endDate);
             
-            const completionData = await fetchCompletionRates(startDate, endDate);
+            const authToken = localStorage.getItem('token');
+            const [completionData, tasksResponse] = await Promise.all([
+                fetchCompletionRates(startDate, endDate),
+                fetch('/api/tasks', { headers: { 'Authorization': authToken } }),
+            ]);
+            const tasks = tasksResponse && tasksResponse.ok ? await tasksResponse.json() : [];
             
             if (completionData) {
                 // Define fixed week ranges
@@ -293,9 +455,28 @@
                 monthlyProgressChart.data.labels = weekLabels;
                 monthlyProgressChart.data.datasets[0].data = weeklyData;
                 monthlyProgressChart.update();
-                
-                // Update month label
                 monthLabel.textContent = `${monthNames[monthStart.getMonth()]} ${monthStart.getFullYear()}`;
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                let possible = 0;
+                let completed = 0;
+                for (let day = 1; day <= monthEnd.getDate(); day++) {
+                    const d = new Date(monthStart.getFullYear(), monthStart.getMonth(), day);
+                    if (d > today) break;
+                    const dateKey = formatDateKey(d);
+                    possible += tasks.length;
+                    completed += tasks.filter((t) => t.completed && t.completed[dateKey]).length;
+                }
+                const monthAvgEl = document.getElementById('monthAvg');
+                if (monthAvgEl) {
+                    if (!possible) {
+                        monthAvgEl.textContent = 'No tasks this month';
+                    } else {
+                        const pct = Math.round((completed / possible) * 100);
+                        monthAvgEl.textContent = `${completed} / ${possible} completed this month (${pct}%)`;
+                    }
+                }
             }
         }
 
@@ -306,7 +487,12 @@
             
             console.log('Fetching yearly data for:', startDate, 'to', endDate);
             
-            const completionData = await fetchCompletionRates(startDate, endDate);
+            const authToken = localStorage.getItem('token');
+            const [completionData, tasksResponse] = await Promise.all([
+                fetchCompletionRates(startDate, endDate),
+                fetch('/api/tasks', { headers: { 'Authorization': authToken } }),
+            ]);
+            const tasks = tasksResponse && tasksResponse.ok ? await tasksResponse.json() : [];
             
             if (completionData) {
                 heatmap.innerHTML = "";
@@ -316,39 +502,41 @@
                     existingLegend.remove();
                 }
                 
-                // Create a container for the entire heatmap with labels
+                // Create a container for the entire heatmap with labels dark:text-gray-400
                 const heatmapContainer = document.createElement('div');
                 heatmapContainer.className = 'flex';
 
-                // Create month labels column
                 const labelColumn = document.createElement('div');
-                labelColumn.className = 'flex flex-col w-12 flex-shrink-0';
+                labelColumn.className = 'flex flex-col w-12 flex-shrink-0 gap-1';
 
-                // Create main heatmap grid
                 const gridContainer = document.createElement('div');
                 gridContainer.className = 'flex flex-col gap-1';
 
-                // Create rows for each month
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
                 for (let month = 0; month < 12; month++) {
                     const daysInMonth = new Date(year, month + 1, 0).getDate();
-                    
-                    // Create the month label div with the same height as the squares
-                    const monthLabel = document.createElement('div');
-                    monthLabel.className = 'h-7 flex items-center text-xs font-medium text-gray-600';
-                    monthLabel.textContent = monthNames[month];
-                    labelColumn.appendChild(monthLabel);
 
-                    // Create the row for squares
+                    const monthLabelEl = document.createElement('div');
+                    monthLabelEl.className = 'h-8 flex items-center text-xs font-medium text-gray-600';
+                    monthLabelEl.textContent = monthNames[month];
+                    labelColumn.appendChild(monthLabelEl);
+
                     const monthRow = document.createElement('div');
-                    monthRow.className = 'flex gap-1 h-7';
+                    monthRow.className = 'flex gap-1 h-8';
 
                     for (let day = 1; day <= daysInMonth; day++) {
                         const cell = document.createElement('div');
                         const dateKey = `${String(day).padStart(2, '0')}-${String(month + 1).padStart(2, '0')}-${year}`;
+                        const cellDate = new Date(year, month, day);
+                        const isFuture = cellDate > today;
                         const completionRate = completionData[dateKey] || 0;
-                        
-                        cell.className = `w-7 h-7 flex-shrink-0 rounded-sm ${getHeatmapColor(completionRate)} hover:ring-1 hover:ring-blue-400 hover:ring-offset-1 transition-colors duration-200`;
-                        cell.title = `${monthNames[month]} ${day}, ${year}: ${completionRate.toFixed(1)}%`;
+
+                        cell.className = `w-8 h-8 flex-shrink-0 rounded-md ${getHeatmapColor(completionRate, isFuture)} hover:ring-2 hover:ring-blue-400 hover:ring-offset-1 dark:hover:ring-offset-slate-800 transition-all duration-200`;
+                        cell.title = isFuture
+                            ? `${monthNames[month]} ${day}, ${year}: upcoming`
+                            : `${monthNames[month]} ${day}, ${year}: ${completionRate.toFixed(1)}%`;
                         monthRow.appendChild(cell);
                     }
 
@@ -359,14 +547,14 @@
                 heatmapContainer.appendChild(gridContainer);
                 heatmap.appendChild(heatmapContainer);
 
-                // Add legend
                 const legend = document.createElement('div');
                 legend.className = 'mt-4 flex flex-wrap items-center justify-center gap-2 md:gap-4 heatmap-legend';
-                
+
                 const legendItems = [
-                    { label: '0%', color: 'bg-gray-200' },
-                    { label: '1-25%', color: 'bg-blue-100' },
-                    { label: '26-50%', color: 'bg-blue-300' },
+                    { label: 'Upcoming', color: 'bg-gray-50 border border-gray-200 dark:bg-slate-900 dark:border-slate-700' },
+                    { label: '0%', color: 'bg-gray-200 dark:bg-slate-700' },
+                    { label: '1-25%', color: 'bg-blue-100 dark:bg-blue-900' },
+                    { label: '26-50%', color: 'bg-blue-300 dark:bg-blue-700' },
                     { label: '51-75%', color: 'bg-blue-500' },
                     { label: '76-100%', color: 'bg-blue-700' }
                 ];
@@ -374,14 +562,14 @@
                 legendItems.forEach(item => {
                     const legendItem = document.createElement('div');
                     legendItem.className = 'flex items-center gap-1';
-                    
+
                     const colorBox = document.createElement('div');
                     colorBox.className = `w-4 h-4 flex-shrink-0 ${item.color} rounded-sm`;
-                    
+
                     const label = document.createElement('span');
-                    label.className = 'text-xs text-gray-600';
+                    label.className = 'text-xs text-gray-600 dark:text-gray-400';
                     label.textContent = item.label;
-                    
+
                     legendItem.appendChild(colorBox);
                     legendItem.appendChild(label);
                     legend.appendChild(legendItem);
@@ -389,9 +577,31 @@
 
                 const container = heatmap.parentElement;
                 container.appendChild(legend);
+
+                let possible = 0;
+                let completed = 0;
+                for (let month = 0; month < 12; month++) {
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const d = new Date(year, month, day);
+                        if (d > today) break;
+                        const dateKey = `${String(day).padStart(2, '0')}-${String(month + 1).padStart(2, '0')}-${year}`;
+                        possible += tasks.length;
+                        completed += tasks.filter((t) => t.completed && t.completed[dateKey]).length;
+                    }
+                }
+                const yearAvgEl = document.getElementById('yearAvg');
+                if (yearAvgEl) {
+                    if (!possible) {
+                        yearAvgEl.textContent = 'No tasks this year';
+                    } else {
+                        const pct = Math.round((completed / possible) * 100);
+                        yearAvgEl.textContent = `${completed} / ${possible} completed this year (${pct}%)`;
+                    }
+                }
             }
 
-            yearLabel.textContent = `Year ${year}`;
+            yearLabel.textContent = String(year);
         }
 
         // Event listeners for month navigation

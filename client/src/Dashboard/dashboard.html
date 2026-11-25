@@ -2,96 +2,271 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Dashboard - HabitTracker</title>
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem('theme');
+                if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {}
+        })();
+        if (!localStorage.getItem('token')) {
+            window.location.href = '../login.html';
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' };
+    </script>
+    <style>
+        html.dark { color-scheme: dark; }
+        html, body { overflow-x: hidden; }
+        #appSidebar { top: 4rem; width: 15rem; transition: width 0.2s ease, transform 0.2s ease; }
+        #appSidebar.collapsed { width: 4.5rem; }
+        #appSidebar.collapsed .sidebar-label { display: none; }
+        #appSidebar.collapsed .sidebar-link { justify-content: center; padding-left: 0.5rem; padding-right: 0.5rem; }
+        #sidebarEdgeIcon { transition: transform 0.2s ease; }
+        #appSidebar.collapsed #sidebarEdgeIcon { transform: rotate(180deg); }
+        #appMain, #appFooter { transition: margin-left 0.2s ease; }
+        @media (min-width: 768px) {
+            #appMain, #appFooter { margin-left: 15rem; }
+            #appMain.rail, #appFooter.rail { margin-left: 4.5rem; }
+        }
+        @media (max-width: 767px) {
+            #appSidebar, #appSidebar.collapsed { width: min(15rem, 85vw); }
+            #appHeader {
+                height: calc(3rem + env(safe-area-inset-top, 0px));
+                padding-top: env(safe-area-inset-top, 0px);
+                box-sizing: border-box;
+            }
+            #appSidebar {
+                top: calc(3rem + env(safe-area-inset-top, 0px));
+                padding-bottom: env(safe-area-inset-bottom, 0px);
+            }
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <!-- Navbar -->
-    <nav class="bg-white shadow-lg">
-        <div class="max-w-6xl mx-auto px-4">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <span class="text-xl font-bold text-gray-800">HabitTracker</span>
+<body class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 min-h-screen flex flex-col">
+    <header id="appHeader" class="sticky top-0 z-50 h-12 md:h-16 bg-white/90 dark:bg-slate-950/80 backdrop-blur-sm shadow-md dark:shadow-none dark:border-b dark:border-slate-800 flex items-center justify-between px-4">
+        <div class="flex items-center gap-2 md:gap-3 min-w-0">
+            <button type="button" id="sidebarMenuButton" class="p-2 -ml-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 md:hidden touch-manipulation" onclick="toggleSidebar()" aria-label="Toggle sidebar" aria-controls="appSidebar" aria-expanded="false">
+                <svg class="w-6 h-6 text-gray-700 dark:text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+            <a href="dashboard.html" class="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent shrink-0">HabitTracker</a>
+            <span class="hidden sm:inline text-gray-300 dark:text-slate-600">|</span>
+            <span class="hidden sm:inline text-base md:text-lg font-semibold text-gray-700 dark:text-gray-200 truncate">Dashboard</span>
+        </div>
+        <div class="flex items-center space-x-2 md:space-x-4 shrink-0">
+            <button type="button" id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-200" aria-label="Toggle dark mode">
+                <svg id="themeIconMoon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                <svg id="themeIconSun" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            </button>
+            <button type="button" id="logoutButton" class="px-2 py-1.5 md:px-4 md:py-2 rounded-md bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs md:text-base hover:from-blue-700 hover:to-purple-700 transition-colors shadow-sm">Logout</button>
+        </div>
+    </header>
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden" onclick="toggleSidebar(false)"></div>
+    <aside id="appSidebar" class="fixed left-0 bottom-0 z-40 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col transform -translate-x-full md:translate-x-0">
+        <button type="button" id="sidebarEdgeToggle" onclick="toggleSidebar()" aria-label="Collapse sidebar" class="hidden md:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 shadow-md text-gray-500 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-400 transition-colors z-10">
+            <svg id="sidebarEdgeIcon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <nav class="flex-1 p-2 space-y-1">
+            <a href="dashboard.html" title="Dashboard" class="sidebar-link flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg bg-blue-50 text-blue-700 font-medium dark:bg-blue-950 dark:text-blue-300">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                <span class="sidebar-label">Dashboard</span>
+            </a>
+            <a href="schedule.html" title="Schedule" class="sidebar-link flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                <span class="sidebar-label">Schedule</span>
+            </a>
+            <a href="calendar.html" title="Tasks" class="sidebar-link flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                <span class="sidebar-label">Tasks</span>
+            </a>
+            <a href="progress.html" title="Progress" class="sidebar-link flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                <span class="sidebar-label">Progress</span>
+            </a>
+        </nav>
+    </aside>
+
+    <div id="appMain" class="min-h-screen flex flex-col">
+
+    <!-- Dashboard Content -->
+    <div class="max-w-6xl mx-auto px-3 sm:px-4 py-6 md:py-10 w-full min-w-0">
+
+        <div class="text-center mb-5 md:mb-8 px-1">
+            <h1 class="text-lg sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 break-words">
+                <span id="loading" class="inline-block h-7 md:h-8 w-40 sm:w-48 md:w-64 max-w-full bg-gray-200 dark:bg-slate-700 rounded animate-pulse align-middle"></span>
+                <span id="greeting" class="hidden">Welcome</span>
+            </h1>
+            <p id="todaySubtitle" class="text-gray-500 dark:text-gray-400 mt-1 text-sm md:text-base">Here's your day.</p>
+        </div>
+
+        <!-- Quick Overview Stats -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-6 mb-5 md:mb-8">
+            <div class="min-w-0 bg-gradient-to-br from-blue-50 to-white dark:from-slate-800 dark:to-slate-800 rounded-xl md:rounded-2xl shadow-md hover:shadow-lg transition-shadow p-2.5 sm:p-5 md:p-7 text-center border border-blue-100 dark:border-slate-700">
+                <div class="mx-auto mb-1.5 md:mb-3 w-8 h-8 md:w-14 md:h-14 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-7 md:w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
                 </div>
-                <div class="flex items-center">
-                    <a href="#" id="logoutButton" class="px-4 py-2 rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300">Logout</a>
+                <p id="statScheduled" class="text-xl md:text-4xl font-bold text-blue-700 dark:text-blue-300 break-words"><span class="inline-block h-6 md:h-8 w-10 md:w-12 bg-blue-100 dark:bg-blue-900 rounded animate-pulse align-middle"></span></p>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 md:mt-2 leading-snug"><span class="sm:hidden">Scheduled</span><span class="hidden sm:inline">Tasks scheduled</span></p>
+            </div>
+            <div class="min-w-0 bg-gradient-to-br from-green-50 to-white dark:from-slate-800 dark:to-slate-800 rounded-xl md:rounded-2xl shadow-md hover:shadow-lg transition-shadow p-2.5 sm:p-5 md:p-7 text-center border border-green-100 dark:border-slate-700">
+                <div class="mx-auto mb-1.5 md:mb-3 w-8 h-8 md:w-14 md:h-14 rounded-full bg-green-100 dark:bg-green-950 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-7 md:w-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                 </div>
+                <p id="statCompletedToday" class="text-xl md:text-4xl font-bold text-green-700 dark:text-green-300 break-words"><span class="inline-block h-6 md:h-8 w-12 md:w-16 bg-green-100 dark:bg-green-900 rounded animate-pulse align-middle"></span></p>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 md:mt-2 leading-snug"><span class="sm:hidden">Completed</span><span class="hidden sm:inline">Completed today</span></p>
+            </div>
+            <div class="min-w-0 bg-gradient-to-br from-emerald-50 to-white dark:from-slate-800 dark:to-slate-800 rounded-xl md:rounded-2xl shadow-md hover:shadow-lg transition-shadow p-2.5 sm:p-5 md:p-7 text-center border border-emerald-100 dark:border-slate-700">
+                <div class="mx-auto mb-1.5 md:mb-3 w-8 h-8 md:w-14 md:h-14 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-7 md:w-7 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                </div>
+                <p id="statTodayPct" class="text-xl md:text-4xl font-bold text-emerald-700 dark:text-emerald-300 break-words"><span class="inline-block h-6 md:h-8 w-10 md:w-12 bg-emerald-100 dark:bg-emerald-900 rounded animate-pulse align-middle"></span></p>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 md:mt-2 leading-snug"><span class="sm:hidden">Today</span><span class="hidden sm:inline">Today's completion</span></p>
+            </div>
+            <div class="min-w-0 bg-gradient-to-br from-purple-50 to-white dark:from-slate-800 dark:to-slate-800 rounded-xl md:rounded-2xl shadow-md hover:shadow-lg transition-shadow p-2.5 sm:p-5 md:p-7 text-center border border-purple-100 dark:border-slate-700">
+                <div class="mx-auto mb-1.5 md:mb-3 w-8 h-8 md:w-14 md:h-14 rounded-full bg-purple-100 dark:bg-purple-950 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-7 md:w-7 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <p id="statWeeklyAvg" class="text-xl md:text-4xl font-bold text-purple-700 dark:text-purple-300 break-words"><span class="inline-block h-6 md:h-8 w-10 md:w-12 bg-purple-100 dark:bg-purple-900 rounded animate-pulse align-middle"></span></p>
+                <p id="statWeeklyPct" class="text-xs md:text-lg font-semibold text-purple-600 dark:text-purple-300 mt-0.5 md:mt-1"></p>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 md:mt-2 leading-snug"><span class="sm:hidden">Weekly</span><span class="hidden sm:inline">Weekly completion</span></p>
             </div>
         </div>
-    </nav>
 
-    <!-- Loading State -->
-    <div id="loading" class="text-center py-4">
-        <p>Loading...</p>
-    </div>
-
-    <!-- Dashboard Cards -->
-    <div class="min-h-screen flex items-center justify-center">
-        <div class="max-w-6xl mx-auto px-4 py-8">
-            <h1 class="text-3xl font-bold text-center mb-8">Welcome to Your Dashboard!</h1>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Card 1: Create or Edit Schedule -->
-                <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col">
-                    <h2 class="text-2xl font-bold mb-4">Create or Edit Your Schedule</h2>
-                    <p class="text-gray-700 mb-6 flex-grow">
-                        Plan your day by creating or editing your schedule. Stay organized and productive!
-                    </p>
-                    <div class="text-center">
-                        <a href="./schedule.html" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                           Manage Schedule
-                        </a>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+            <!-- Today's tasks -->
+            <section class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4 md:p-6 min-w-0">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                    <div class="min-w-0">
+                        <h2 class="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">Today's tasks</h2>
+                        <p id="todayDateLabel" class="text-sm text-gray-500 dark:text-gray-400"></p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="./schedule.html" class="inline-flex items-center text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 touch-manipulation">Edit schedule</a>
+                        <a href="./calendar.html" class="inline-flex items-center text-sm px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 touch-manipulation">View calendar</a>
                     </div>
                 </div>
-
-                <!-- Card 2: Complete Daily Tasks -->
-                <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col">
-                    <h2 class="text-2xl font-bold mb-4">Complete Your Daily Tasks</h2>
-                    <p class="text-gray-700 mb-6 flex-grow">
-                        Track and complete your daily tasks. Build habits and achieve your goals!
-                    </p>
-                    <div class="text-center">
-                        <a href="./calendar.html" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                            Complete Tasks
-                        </a>
-                    </div>
+                <div id="todayTasksEmpty" class="hidden text-center py-10 text-gray-600 dark:text-gray-400">
+                    No tasks yet. Add some on the
+                    <a href="./schedule.html" class="text-blue-600 font-medium underline">Schedule</a> page.
                 </div>
+                <ul id="todayTaskList" class="divide-y divide-gray-100 dark:divide-slate-700"></ul>
+            </section>
 
-                <!-- Card 3: Check Progress -->
-                <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col">
-                    <h2 class="text-2xl font-bold mb-4">Check Your Progress</h2>
-                    <p class="text-gray-700 mb-6 flex-grow">
-                        View your progress over time. See how far you've come and stay motivated!
-                    </p>
-                    <div class="text-center">
-                        <a href="./progress.html" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                            View Progress
-                        </a>
-                    </div>
+            <!-- This week snapshot -->
+            <section class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-4 md:p-6 min-w-0">
+                <div class="flex items-center justify-between gap-2 mb-4 min-w-0">
+                    <h2 class="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 shrink-0">This week</h2>
+                    <a href="./progress.html" class="text-sm text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap touch-manipulation">View progress</a>
                 </div>
-            </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Daily completion</p>
+                <div id="weekBars" class="flex items-end justify-between gap-1 sm:gap-2 h-36"></div>
+                <div id="weekLabels" class="flex justify-between gap-1 sm:gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400"></div>
+            </section>
         </div>
     </div>
 
    <!-- Footer -->
-   <footer class="bg-gray-200 text-black py-2.5 md:py-5 mt-auto">
+   <footer id="appFooter" class="bg-white/60 dark:bg-slate-900/60 border-t border-gray-200 dark:border-slate-700 py-2.5 md:py-5 mt-auto pb-[max(0.625rem,env(safe-area-inset-bottom))]">
     <div class="max-w-6xl mx-auto px-4 text-center">
-        <p class="text-sm md:text-base">&copy; 2025 HabitTracker. All rights reserved.</p>
+        <p class="text-sm md:text-base text-gray-500 dark:text-gray-400">&copy; 2025 HabitTracker. All rights reserved.</p>
     </div>
 </footer>
+    </div>
 
     <!-- JavaScript -->
     <script>
-        // Check if the user is authenticated
-        const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = '../login.html';
+        function isDarkTheme() {
+            return document.documentElement.classList.contains('dark');
         }
+        function syncThemeToggle() {
+            const dark = isDarkTheme();
+            const sun = document.getElementById('themeIconSun');
+            const moon = document.getElementById('themeIconMoon');
+            if (sun) sun.classList.toggle('hidden', !dark);
+            if (moon) moon.classList.toggle('hidden', dark);
+            const btn = document.getElementById('themeToggle');
+            if (btn) btn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+        }
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDarkTheme() ? 'dark' : 'light');
+            syncThemeToggle();
+            window.dispatchEvent(new Event('themechange'));
+        }
+        syncThemeToggle();
+        function isMobileNav() {
+            return window.innerWidth < 768;
+        }
+        function toggleSidebar(open) {
+            const sidebar = document.getElementById('appSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const main = document.getElementById('appMain');
+            const footer = document.getElementById('appFooter');
+            const edgeBtn = document.getElementById('sidebarEdgeToggle');
+            const menuBtn = document.getElementById('sidebarMenuButton');
+            const mobile = isMobileNav();
+            if (typeof open !== 'boolean') {
+                // Toggling: flip whatever the sidebar's current state actually is right now.
+                open = mobile ? sidebar.classList.contains('-translate-x-full') : sidebar.classList.contains('collapsed');
+            }
+            if (mobile) {
+                sidebar.classList.remove('collapsed');
+                sidebar.classList.toggle('-translate-x-full', !open);
+                overlay.classList.toggle('hidden', !open);
+                document.body.classList.toggle('overflow-hidden', open);
+                if (main) main.classList.remove('rail');
+                if (footer) footer.classList.remove('rail');
+            } else {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.toggle('collapsed', !open);
+                overlay.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+                if (main) main.classList.toggle('rail', !open);
+                if (footer) footer.classList.toggle('rail', !open);
+                localStorage.setItem('sidebarOpen', open ? '1' : '0');
+            }
+            if (menuBtn) menuBtn.setAttribute('aria-expanded', mobile && open ? 'true' : 'false');
+            if (edgeBtn) {
+                const isExpanded = !sidebar.classList.contains('collapsed');
+                edgeBtn.setAttribute('aria-label', isExpanded ? 'Collapse sidebar' : 'Expand sidebar');
+            }
+        }
+        (function initSidebar() {
+            if (isMobileNav()) toggleSidebar(false);
+            else toggleSidebar(localStorage.getItem('sidebarOpen') !== '0');
+            let lastMobile = isMobileNav();
+            window.addEventListener('resize', () => {
+                const mobile = isMobileNav();
+                if (mobile === lastMobile) return;
+                lastMobile = mobile;
+                if (mobile) toggleSidebar(false);
+                else toggleSidebar(localStorage.getItem('sidebarOpen') !== '0');
+            });
+        })();
+
+        const token = localStorage.getItem('token');
 
         // Logout functionality
-        document.getElementById('logoutButton').addEventListener('click', () => {
-            localStorage.removeItem('token');
-            window.location.href = '../index.html';
+        document.getElementById('logoutButton').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('token');
+                window.location.href = '../index.html';
+            }
         });
 
         // Fetch user data
@@ -112,14 +287,242 @@
                 }
 
                 const userData = await response.json();
-                document.querySelector('h1').textContent = `Welcome, ${userData.username}!`;
-                document.getElementById('loading').style.display = 'none';
+                document.getElementById('greeting').textContent = `Welcome, ${userData.username}!`;
+                document.getElementById('greeting').classList.remove('hidden');
+                document.getElementById('loading').classList.add('hidden');
             } catch (err) {
                 console.error('Error fetching user data:', err);
+                document.getElementById('greeting').textContent = 'Welcome to Your Dashboard!';
+                document.getElementById('greeting').classList.remove('hidden');
+                document.getElementById('loading').classList.add('hidden');
             }
         }
 
         fetchUserData();
+        loadDashboard();
+
+        const weekdayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        let dashboardTasks = [];
+        let weekRates = {};
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatDateKey(date) {
+            return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
+        }
+
+        function formatForAPI(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function getMonday(date) {
+            const monday = new Date(date);
+            const dayOfWeek = date.getDay();
+            const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            monday.setDate(date.getDate() - diffToMonday);
+            monday.setHours(0, 0, 0, 0);
+            return monday;
+        }
+
+        function formatTime(time) {
+            if (!time) return '';
+            const [hours, minutes] = time.split(':');
+            let formattedHours = parseInt(hours, 10);
+            const ampm = formattedHours >= 12 ? 'PM' : 'AM';
+            formattedHours = formattedHours % 12 || 12;
+            return `${formattedHours}:${minutes} ${ampm}`;
+        }
+
+        function formatTimeDisplay(startTime, endTime) {
+            if (!startTime) return '';
+            const start = formatTime(startTime);
+            return endTime ? `${start}–${formatTime(endTime)}` : start;
+        }
+
+        function sortTasks(tasks) {
+            const hasOrder = tasks.some((t) => typeof t.order === 'number');
+            return [...tasks].sort((a, b) => {
+                if (hasOrder) {
+                    const ao = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
+                    const bo = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
+                    if (ao !== bo) return ao - bo;
+                }
+                return (a.time || '').localeCompare(b.time || '');
+            });
+        }
+
+        function isCompletedOn(task, dateKey) {
+            return !!(task.completed && task.completed[dateKey]);
+        }
+
+        function updateStats() {
+            const today = new Date();
+            const todayKey = formatDateKey(today);
+            const totalTasks = dashboardTasks.length;
+            const completedToday = dashboardTasks.filter((t) => isCompletedOn(t, todayKey)).length;
+            const todayPct = totalTasks ? Math.round((completedToday / totalTasks) * 100) : 0;
+
+            document.getElementById('statScheduled').textContent = totalTasks;
+            document.getElementById('statCompletedToday').textContent = totalTasks ? `${completedToday}/${totalTasks}` : '0/0';
+            document.getElementById('statTodayPct').textContent = `${todayPct}%`;
+
+            const monday = getMonday(today);
+            let weekCompleted = 0;
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(monday);
+                day.setDate(monday.getDate() + i);
+                if (day > today) break;
+                const key = formatDateKey(day);
+                weekCompleted += dashboardTasks.filter((t) => isCompletedOn(t, key)).length;
+            }
+            const weekPossible = totalTasks * 7;
+            const weekPct = weekPossible ? Math.round((weekCompleted / weekPossible) * 100) : 0;
+            document.getElementById('statWeeklyAvg').textContent = totalTasks ? `${weekCompleted}/${weekPossible}` : '0/0';
+            document.getElementById('statWeeklyPct').textContent = `${weekPct}%`;
+        }
+
+        function renderTodayTasks() {
+            const today = new Date();
+            const todayKey = formatDateKey(today);
+            const list = document.getElementById('todayTaskList');
+            const empty = document.getElementById('todayTasksEmpty');
+            list.innerHTML = '';
+
+            document.getElementById('todayDateLabel').textContent = today.toLocaleDateString(undefined, {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+            });
+
+            if (!dashboardTasks.length) {
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            sortTasks(dashboardTasks).forEach((task) => {
+                const done = isCompletedOn(task, todayKey);
+                const item = document.createElement('li');
+                item.className = 'py-3 flex items-start sm:items-center gap-2 sm:gap-3 min-w-0';
+                const timeLabel = escapeHtml(formatTimeDisplay(task.time, task.endTime));
+                item.innerHTML = `
+                    <label class="flex items-center justify-center min-h-[44px] min-w-[44px] -ml-2 shrink-0">
+                        <input type="checkbox" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
+                            ${done ? 'checked' : ''} data-task-id="${escapeHtml(task._id)}">
+                    </label>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-gray-900 dark:text-gray-100 break-words ${done ? 'line-through text-gray-400' : ''}">${escapeHtml(task.name)}</p>
+                        <span class="mt-0.5 block text-xs text-gray-500 sm:hidden">${timeLabel}</span>
+                    </div>
+                    <span class="hidden sm:inline text-sm text-gray-500 whitespace-nowrap shrink-0">${timeLabel}</span>
+                `;
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                const nameEl = item.querySelector('p');
+                checkbox.addEventListener('change', async () => {
+                    try {
+                        await updateTaskCompletion(task._id, checkbox.checked, todayKey);
+                        if (!task.completed) task.completed = {};
+                        task.completed[todayKey] = checkbox.checked;
+                        nameEl.classList.toggle('line-through', checkbox.checked);
+                        nameEl.classList.toggle('text-gray-400', checkbox.checked);
+                        const total = dashboardTasks.length;
+                        const completed = dashboardTasks.filter((t) => isCompletedOn(t, todayKey)).length;
+                        weekRates[todayKey] = total ? (completed / total) * 100 : 0;
+                        updateStats();
+                        renderWeekBars();
+                    } catch (err) {
+                        checkbox.checked = !checkbox.checked;
+                        console.error('Error updating completion status:', err);
+                    }
+                });
+                list.appendChild(item);
+            });
+        }
+
+        function renderWeekBars() {
+            const today = new Date();
+            const monday = getMonday(today);
+            const bars = document.getElementById('weekBars');
+            const labels = document.getElementById('weekLabels');
+            bars.innerHTML = '';
+            labels.innerHTML = '';
+
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(monday);
+                day.setDate(monday.getDate() + i);
+                const key = formatDateKey(day);
+                const rate = Math.max(0, Math.min(100, weekRates[key] || 0));
+                const isToday = formatDateKey(today) === key;
+                const isFuture = day > today;
+
+                const barWrap = document.createElement('div');
+                barWrap.className = 'flex-1 flex flex-col justify-end items-center h-full';
+                const bar = document.createElement('div');
+                const height = isFuture ? 6 : Math.max(6, Math.round((rate / 100) * 100));
+                bar.className = `w-full max-w-[28px] rounded-t-md ${isToday ? 'bg-blue-600' : isFuture ? 'bg-gray-200 dark:bg-slate-700' : 'bg-indigo-300 dark:bg-indigo-500'}`;
+                bar.style.height = `${height}%`;
+                bar.title = `${weekdayNames[day.getDay()]}: ${isFuture ? '—' : `${rate.toFixed(0)}%`}`;
+                barWrap.appendChild(bar);
+                bars.appendChild(barWrap);
+
+                const label = document.createElement('span');
+                label.className = `flex-1 text-center ${isToday ? 'font-semibold text-blue-700 dark:text-blue-300' : ''}`;
+                label.textContent = weekdayNames[day.getDay()].slice(0, 1);
+                labels.appendChild(label);
+            }
+        }
+
+        async function updateTaskCompletion(taskId, completed, date) {
+            const response = await fetch(`/api/tasks/${taskId}/complete`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token,
+                },
+                body: JSON.stringify({ completed, date }),
+            });
+            if (!response.ok) {
+                throw new Error('Failed to update task completion status');
+            }
+        }
+
+        async function loadDashboard() {
+            try {
+                const today = new Date();
+                const monday = getMonday(today);
+                const sunday = new Date(monday);
+                sunday.setDate(monday.getDate() + 6);
+
+                const [tasksResponse, ratesResponse] = await Promise.all([
+                    fetch('/api/tasks', { headers: { 'Authorization': token } }),
+                    fetch(`/api/completion-rates?startDate=${formatForAPI(monday)}&endDate=${formatForAPI(sunday)}`, {
+                        headers: { 'Authorization': token },
+                    }),
+                ]);
+
+                if (!tasksResponse.ok) throw new Error('Failed to fetch tasks');
+                dashboardTasks = await tasksResponse.json();
+                weekRates = ratesResponse.ok ? await ratesResponse.json() : {};
+
+                updateStats();
+                renderTodayTasks();
+                renderWeekBars();
+            } catch (err) {
+                console.error('Error loading dashboard:', err);
+                ['statScheduled', 'statCompletedToday', 'statTodayPct', 'statWeeklyAvg', 'statWeeklyPct'].forEach((id) => {
+                    document.getElementById(id).textContent = '—';
+                });
+                document.getElementById('todayTasksEmpty').classList.remove('hidden');
+                document.getElementById('todayTasksEmpty').textContent = 'Could not load today\'s tasks.';
+            }
+        }
     </script>
 </body>
 </html>

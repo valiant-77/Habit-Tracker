@@ -69,9 +69,22 @@ const taskSchema = new mongoose.Schema({
     name: { type: String, required: true },
     time: { type: String, required: true },
     endTime: { type: String, required: false }, // Optional end time
+    order: { type: Number, required: false },
     completed: { type: Map, of: Boolean, default: {} }, 
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, 
 });
+
+function sortTasksByOrderThenTime(tasks) {
+    const hasOrder = tasks.some((t) => typeof t.order === 'number');
+    return tasks.sort((a, b) => {
+        if (hasOrder) {
+            const ao = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
+            const bo = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
+            if (ao !== bo) return ao - bo;
+        }
+        return (a.time || '').localeCompare(b.time || '');
+    });
+}
 
 /******************************************************************************
  * Create Mongoose Models
@@ -195,11 +208,41 @@ app.get('/api/user', authenticate, async (req, res) => {
 app.get('/api/tasks', authenticate, async (req, res) => {
     try {
         const tasks = await Task.find({ user: req.user._id });
-        res.json(tasks);
+        res.json(sortTasksByOrderThenTime(tasks));
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch tasks' });
     }
 });
+
+/****************Route to persist task order for the authenticated user***********************/
+async function reorderUserTasks(req, res) {
+    const { orderedIds } = req.body;
+
+    if (!Array.isArray(orderedIds)) {
+        return res.status(400).json({ error: 'orderedIds must be an array of task ids' });
+    }
+
+    try {
+        const ids = [...new Set(orderedIds.map((id) => String(id || '')).filter(Boolean))];
+
+        for (let index = 0; index < ids.length; index++) {
+            const id = ids[index];
+            if (!mongoose.Types.ObjectId.isValid(id)) continue;
+            await Task.updateOne(
+                { _id: id, user: req.user._id },
+                { $set: { order: index } }
+            );
+        }
+
+        res.json({ message: 'Task order updated' });
+    } catch (err) {
+        console.error('Error updating task order:', err);
+        res.status(500).json({ error: 'Failed to update task order' });
+    }
+}
+
+app.post('/api/tasks/reorder', authenticate, reorderUserTasks);
+app.patch('/api/tasks/reorder', authenticate, reorderUserTasks);
 
 /****************  Route to add a new task for the authenticated user***********************/
 app.post('/api/tasks', authenticate, async (req, res) => {
@@ -220,6 +263,13 @@ app.post('/api/tasks', authenticate, async (req, res) => {
         if (endTime) {
             taskData.endTime = endTime;
         }
+
+        const existing = await Task.find({ user: req.user._id });
+        const hasOrder = existing.some((t) => typeof t.order === 'number');
+        if (hasOrder) {
+            const maxOrder = Math.max(...existing.map((t) => (typeof t.order === 'number' ? t.order : -1)));
+            taskData.order = maxOrder + 1;
+        }
         
         const newTask = new Task(taskData);
         await newTask.save();
@@ -233,20 +283,23 @@ app.post('/api/tasks', authenticate, async (req, res) => {
 /****************Route to update a task for the authenticated user***********************/
 app.put('/api/tasks/:id', authenticate, async (req, res) => {
     const { id } = req.params;
-    const { name, time, endTime } = req.body;
+    const { name, time, endTime, order } = req.body;
 
     if (!name || !time) {
         return res.status(400).json({ error: 'Task name and time are required' });
     }
 
     try {
-        const updateData = { name, time };
-        
-        // Include endTime in the update only if provided
+        const setFields = { name, time };
+        if (typeof order === 'number') {
+            setFields.order = order;
+        }
         if (endTime) {
-            updateData.endTime = endTime;
-        } else {
-            // If endTime is not provided, remove it from the document
+            setFields.endTime = endTime;
+        }
+
+        const updateData = { $set: setFields };
+        if (!endTime) {
             updateData.$unset = { endTime: "" };
         }
         
@@ -280,43 +333,6 @@ app.delete('/api/tasks/:id', authenticate, async (req, res) => {
         res.json({ message: 'Task deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: 'Failed to delete task' });
-    }
-});
-
-/****************Route to save multiple tasks***********************/
-app.post('/api/tasks/save', authenticate, async (req, res) => {
-    const { tasks } = req.body;
-
-    if (!tasks || !Array.isArray(tasks)) {
-        return res.status(400).json({ error: 'Invalid tasks data' });
-    }
-
-    try {
-        // Delete existing tasks for the user
-        await Task.deleteMany({ user: req.user._id });
-
-        // Save new tasks with endTime if provided
-        const newTasks = tasks.map(task => {
-            const taskData = {
-                name: task.name,
-                time: task.time,
-                user: req.user._id,
-            };
-            
-            // Only add endTime if it's provided
-            if (task.endTime) {
-                taskData.endTime = task.endTime;
-            }
-            
-            return taskData;
-        });
-
-        await Task.insertMany(newTasks);
-
-        res.json({ message: 'Schedule saved successfully' });
-    } catch (err) {
-        console.error('Error saving tasks:', err);
-        res.status(500).json({ error: 'Failed to save tasks' });
     }
 });
 
@@ -418,6 +434,14 @@ app.post('/api/feedback', async (req, res) => {
             return res.status(400).json({ error: 'Feedback content is required' });
         }
 
+        const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[character]);
+
         // Prepare email content
         const mailOptions = {
             from: process.env.EMAIL_USER,
@@ -425,9 +449,9 @@ app.post('/api/feedback', async (req, res) => {
             subject: 'HabitTracker Feedback',
             html: `
                 <h2>New Feedback Received</h2>
-                <p><strong>Feedback:</strong> ${feedback}</p>
-                ${Name ? `<p><strong>User Name:</strong> ${Name}</p>` : '<p><strong>User Name:</strong> Not provided</p>'}
-                ${email ? `<p><strong>User Email:</strong> ${email}</p>` : '<p><strong>User Email:</strong> Not provided</p>'}
+                <p><strong>Feedback:</strong> ${escapeHtml(feedback)}</p>
+                ${Name ? `<p><strong>User Name:</strong> ${escapeHtml(Name)}</p>` : '<p><strong>User Name:</strong> Not provided</p>'}
+                ${email ? `<p><strong>User Email:</strong> ${escapeHtml(email)}</p>` : '<p><strong>User Email:</strong> Not provided</p>'}
                 <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
             `
         };

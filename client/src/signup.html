@@ -2,11 +2,28 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Signup - HabitTracker</title>
-    
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem('theme');
+                if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' };
+    </script>
     <style>
+        html.dark { color-scheme: dark; }
+        html, body { overflow-x: hidden; }
+        #appNav {
+            padding-top: env(safe-area-inset-top, 0px);
+        }
     input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
@@ -20,39 +37,67 @@ input:autofill {
   background-color: white;
   color: black;
 }
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover,
+html.dark input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #1e293b inset;
+  -webkit-text-fill-color: #f1f5f9;
+}
+html.dark input:autofill {
+  background-color: #1e293b;
+  color: #f1f5f9;
+}
 </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 min-h-screen min-h-[100dvh] flex flex-col">
     <!-- Navbar -->
-    <nav class="bg-white shadow-lg">
+    <nav id="appNav" class="bg-white/90 dark:bg-slate-950/80 backdrop-blur-sm shadow-md dark:shadow-none dark:border-b dark:border-slate-800 sticky top-0 z-30">
         <div class="max-w-6xl mx-auto px-4">
-            <div class="flex justify-between items-center h-16">
+            <div class="flex justify-between items-center h-12 md:h-16">
                 <div class="flex items-center">
-                    <span class="text-xl font-bold text-gray-800">HabitTracker</span>
+                    <a href="./index.html" class="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">HabitTracker</a>
                 </div>
-                <div class="flex items-center">
-                    <a href="./index.html" class="px-3 py-2 md:px-4 text-sm md:text-base rounded-md bg-gray-200 text-gray-800 hover:bg-gray-300">Back to Home</a>
+                <div class="flex items-center space-x-2 md:space-x-4">
+                    <button type="button" id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-200" aria-label="Toggle dark mode">
+                        <svg id="themeIconMoon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                        <svg id="themeIconSun" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    </button>
+                    <a href="./index.html" class="px-2 py-1.5 md:px-4 md:py-2 rounded-md bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 text-xs md:text-base hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
+                        <span class="sm:hidden">Home</span><span class="hidden sm:inline">Back to Home</span>
+                    </a>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Signup Form -->
-    <div class="min-h-screen flex items-center justify-center px-4 py-8">
-        <div class="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-lg w-full max-w-md">
-            <h2 class="text-xl sm:text-2xl font-bold text-center mb-4 sm:mb-6">Create Your Account</h2>
+    <div class="flex-grow flex items-center justify-center px-3 sm:px-4 py-6 md:py-8">
+        <div class="bg-white dark:bg-slate-800 p-4 sm:p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-md min-w-0 border border-white/60 dark:border-slate-700">
+            <div class="flex justify-center mb-4">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-7 sm:w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                </div>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-bold text-center mb-4 sm:mb-6 text-gray-900 dark:text-gray-100">Create Your Account</h2>
             
             <!-- Message Display Area -->
-            <div id="messageDisplay" style="display: none; text-align: center; margin: 0 auto 16px auto; padding: 8px 0;"></div>
+            <div id="messageDisplay" class="hidden text-center mb-4 px-1 text-sm break-words"></div>
             
             <form id="signupForm">
                 <!-- Username Input -->
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="username">Username</label>
+                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" for="username">Username</label>
                     <input
                         type="text"
                         id="username"
-                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        name="username"
+                        autocomplete="username"
+                        autocapitalize="none"
+                        autocorrect="off"
+                        spellcheck="false"
+                        class="w-full min-h-[44px] text-base px-3 py-2.5 border border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                         placeholder="Choose a username"
                         required
                     />
@@ -60,21 +105,27 @@ input:autofill {
 
                 <!-- Password Input -->
                 <div class="mb-4 sm:mb-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="password">Password</label>
+                    <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" for="password">Password</label>
                     <div class="relative">
                         <input
                             type="password"
                             id="password"
-                            class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            name="password"
+                            autocomplete="new-password"
+                            class="w-full min-h-[44px] text-base px-3 py-2.5 pr-12 border border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                             placeholder="Create a password"
                             required
                         />
                         <button 
                             type="button" 
                             id="togglePassword" 
-                            class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-800"
+                            class="absolute inset-y-0 right-0 w-11 flex items-center justify-center text-gray-500 hover:text-purple-600 transition-colors touch-manipulation"
+                            aria-label="Show password"
                         >
-                            👁️
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
                         </button>
                     </div>
                 </div>
@@ -82,51 +133,74 @@ input:autofill {
                 <!-- Signup Button -->
                 <button
                     type="submit"
-                    class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full min-h-[44px] bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2.5 rounded-lg hover:from-blue-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 touch-manipulation"
                 >
                     Sign Up
                 </button>
 
                 <!-- Note -->
-                <p class="text-xs sm:text-sm text-gray-600 mt-4">
+                <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-4 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-3 leading-relaxed">
                     <strong>Note:</strong><br>
                     - You can simply sign up with your username; no need for an email!<br>
                     - Remember your password since you can't recover it.
                 </p>
 
                 <!-- Login Link -->
-                <p class="text-center mt-4 text-sm sm:text-base">
+                <p class="text-center mt-4 text-sm sm:text-base text-gray-600 dark:text-gray-400">
                     Already have an account? 
-                    <a href="./login.html" class="text-blue-600 hover:underline">Login here</a>
+                    <a href="./login.html" class="text-purple-600 font-medium hover:underline inline-block py-1 touch-manipulation">Login here</a>
                 </p>
             </form>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="bg-gray-200 text-black py-2.5 md:py-5 mt-auto">
+    <footer class="bg-white/60 dark:bg-slate-900/60 border-t border-gray-200 dark:border-slate-700 py-2.5 md:py-5 mt-auto pb-[max(0.625rem,env(safe-area-inset-bottom))]">
         <div class="max-w-6xl mx-auto px-4 text-center">
-            <p class="text-sm md:text-base">&copy; 2025 HabitTracker. All rights reserved.</p>
+            <p class="text-sm md:text-base text-gray-500 dark:text-gray-400">&copy; 2025 HabitTracker. All rights reserved.</p>
         </div>
     </footer>
 
     <!-- JavaScript for Signup Form -->
     <script>
+        function isDarkTheme() {
+            return document.documentElement.classList.contains('dark');
+        }
+        function syncThemeToggle() {
+            const dark = isDarkTheme();
+            const sun = document.getElementById('themeIconSun');
+            const moon = document.getElementById('themeIconMoon');
+            if (sun) sun.classList.toggle('hidden', !dark);
+            if (moon) moon.classList.toggle('hidden', dark);
+            const btn = document.getElementById('themeToggle');
+            if (btn) btn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+        }
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDarkTheme() ? 'dark' : 'light');
+            syncThemeToggle();
+        }
+        syncThemeToggle();
         function showMessage(message) {
             const messageDisplay = document.getElementById('messageDisplay');
             messageDisplay.textContent = message;
+            messageDisplay.classList.remove('hidden');
             messageDisplay.style.display = 'block';
         }
 
         // Password toggle functionality (added exactly like login page)
+        const eyeIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>`;
+        const eyeOffIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18M10.584 10.587a2 2 0 002.828 2.83M9.363 5.365A9.466 9.466 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411M6.228 6.228A10.025 10.025 0 002.458 12c1.274 4.057 5.064 7 9.542 7a9.46 9.46 0 004.635-1.228" /></svg>`;
         document.getElementById('togglePassword').addEventListener('click', function() {
             const passwordInput = document.getElementById('password');
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
-                this.textContent = '🔒'; 
+                this.innerHTML = eyeOffIcon;
+                this.setAttribute('aria-label', 'Hide password');
             } else {
                 passwordInput.type = 'password';
-                this.textContent = '👁️'; 
+                this.innerHTML = eyeIcon;
+                this.setAttribute('aria-label', 'Show password');
             }
         });
 

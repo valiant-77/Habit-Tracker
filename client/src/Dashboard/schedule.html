@@ -2,88 +2,132 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Schedule - HabitTracker</title>
-    
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem('theme');
+          if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: 'class' };
+    </script>
     <style>
-      html, body {
-        min-height: 100vh;
-        position: relative;
-      }
-      
-      body {
-        padding-bottom: 60px; 
-      }
-      
-      footer {
-        position: absolute;
-        bottom: 0;
-        width: 100%;
-        z-index: 10; 
-      }
-      
+      html.dark { color-scheme: dark; }
+      html, body { overflow-x: hidden; }
       .modal-overlay {
-        z-index: 20;
+        z-index: 50;
       }
 
-      @media (min-width: 640px) {
-        .custom-table-layout {
-          table-layout: fixed;
+      .drag-handle {
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+      }
+
+      .drag-handle:active {
+        cursor: grabbing;
+      }
+
+      #taskList .task-card.dragging {
+        opacity: 0.5;
+      }
+
+      #appSidebar { top: 4rem; width: 15rem; transition: width 0.2s ease, transform 0.2s ease; }
+      #appSidebar.collapsed { width: 4.5rem; }
+      #appSidebar.collapsed .sidebar-label { display: none; }
+      #appSidebar.collapsed .sidebar-link { justify-content: center; padding-left: 0.5rem; padding-right: 0.5rem; }
+      #sidebarEdgeIcon { transition: transform 0.2s ease; }
+      #appSidebar.collapsed #sidebarEdgeIcon { transform: rotate(180deg); }
+      #appMain, #appFooter { transition: margin-left 0.2s ease; }
+      @media (min-width: 768px) {
+        #appMain, #appFooter { margin-left: 15rem; }
+        #appMain.rail, #appFooter.rail { margin-left: 4.5rem; }
+      }
+      @media (max-width: 767px) {
+        #appSidebar, #appSidebar.collapsed { width: min(15rem, 85vw); }
+        #appHeader {
+          height: calc(3rem + env(safe-area-inset-top, 0px));
+          padding-top: env(safe-area-inset-top, 0px);
+          box-sizing: border-box;
         }
-        
-        .task-column {
-          width: 30%;
-        }
-        
-        .time-column {
-          width: 30%;
-          text-align: left; 
-          padding-left: 1.5rem; 
-        }
-        
-        .actions-column {
-          width: 20%;
-          text-align: left; 
-          padding-left: 1.5rem; 
+        #appSidebar {
+          top: calc(3rem + env(safe-area-inset-top, 0px));
+          padding-bottom: env(safe-area-inset-bottom, 0px);
         }
       }
     </style>
   </head>
-  <body class="bg-gray-100">
-    <!-- Navbar -->
-    <nav class="bg-white shadow-lg">
-      <div class="mx-auto max-w-6xl px-4">
-        <div class="flex h-16 items-center justify-between">
-          <div class="flex items-center">
-            <span class="text-xl font-bold text-gray-800">HabitTracker</span>
-          </div>
-          <div class="flex items-center">
-            <a href="dashboard.html" class="rounded-md bg-gray-200 px-4 py-2 text-gray-800 hover:bg-gray-300">Back to Dashboard</a>
-          </div>
-        </div>
+  <body class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 min-h-screen flex flex-col">
+    <header id="appHeader" class="sticky top-0 z-50 h-12 md:h-16 bg-white/90 dark:bg-slate-950/80 backdrop-blur-sm shadow-md dark:shadow-none dark:border-b dark:border-slate-800 flex items-center justify-between px-4">
+      <div class="flex items-center gap-2 md:gap-3 min-w-0">
+        <button type="button" id="sidebarMenuButton" class="p-2 -ml-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 md:hidden" onclick="toggleSidebar()" aria-label="Toggle sidebar" aria-controls="appSidebar" aria-expanded="false">
+          <svg class="w-6 h-6 text-gray-700 dark:text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+        </button>
+        <a href="dashboard.html" class="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent shrink-0">HabitTracker</a>
+        <span class="hidden sm:inline text-gray-300 dark:text-slate-600">|</span>
+        <span class="hidden sm:inline text-base md:text-lg font-semibold text-gray-700 dark:text-gray-200 truncate">Schedule</span>
       </div>
-    </nav>
+      <div class="flex items-center space-x-2 md:space-x-4 shrink-0">
+        <button type="button" id="themeToggle" onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-200" aria-label="Toggle dark mode">
+          <svg id="themeIconMoon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+          <svg id="themeIconSun" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+        </button>
+        <button type="button" id="logoutButton" class="px-2 py-1.5 md:px-4 md:py-2 rounded-md bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs md:text-base hover:from-blue-700 hover:to-purple-700 transition-colors shadow-sm">Logout</button>
+      </div>
+    </header>
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden" onclick="toggleSidebar(false)"></div>
+    <aside id="appSidebar" class="fixed left-0 bottom-0 z-40 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col transform -translate-x-full md:translate-x-0">
+      <button type="button" id="sidebarEdgeToggle" onclick="toggleSidebar()" aria-label="Collapse sidebar" class="hidden md:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 shadow-md text-gray-500 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-400 transition-colors z-10">
+        <svg id="sidebarEdgeIcon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
+      </button>
+      <nav class="flex-1 p-2 space-y-1">
+        <a href="dashboard.html" title="Dashboard" class="sidebar-link flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800">
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+          <span class="sidebar-label">Dashboard</span>
+        </a>
+        <a href="schedule.html" title="Schedule" class="sidebar-link flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg bg-blue-50 text-blue-700 font-medium dark:bg-blue-950 dark:text-blue-300">
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+          <span class="sidebar-label">Schedule</span>
+        </a>
+        <a href="calendar.html" title="Tasks" class="sidebar-link flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800">
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+          <span class="sidebar-label">Tasks</span>
+        </a>
+        <a href="progress.html" title="Progress" class="sidebar-link flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800">
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+          <span class="sidebar-label">Progress</span>
+        </a>
+      </nav>
+    </aside>
+
+    <div id="appMain" class="min-h-screen flex flex-col">
 
     <!-- Message Display Div -->
     <div id="messageDisplay" style="display: none;"></div>
     
     <!-- Confirmation Dialog Div -->
-    <div id="confirmationDialog" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-30 hidden">
-      <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 transform transition-all">
+    <div id="confirmationDialog" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 hidden">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-4 sm:p-6 max-w-sm sm:max-w-md w-full mx-6 sm:mx-4 transform transition-all">
         <div class="flex items-start mb-4">
-          <div class="flex-shrink-0 mr-3">
+          <div class="flex-shrink-0 mr-3 w-10 h-10 rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center">
             <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <div id="confirmationMessage" class="text-gray-800 font-medium"></div>
+          <div id="confirmationMessage" class="text-gray-800 dark:text-gray-100 font-medium self-center"></div>
         </div>
-        <div class="flex justify-end gap-3">
-          <button id="confirmNo" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-3">
+          <button id="confirmNo" class="min-h-[44px] px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-700 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-colors">
             Cancel
           </button>
-          <button id="confirmYes" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+          <button id="confirmYes" class="min-h-[44px] px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
             Delete Schedule
           </button>
         </div>
@@ -91,77 +135,82 @@
     </div>
 
     <!-- Schedule Content -->
-    <div class="mx-auto max-w-4xl px-4 py-8">
-      <h1 class="mb-8 text-center text-3xl font-bold">Your Schedule</h1>
-
-      <!-- Add Task Button -->
-      <div class="mb-4 text-right">
-        <button onclick="openAddTaskModal()" class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">+ Add Task</button>
+    <div class="mx-auto max-w-4xl px-3 sm:px-4 py-6 md:py-8 w-full min-w-0">
+      <div class="text-center mb-5 md:mb-6">
+        <h1 class="text-lg sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Your Schedule</h1>
+        <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm md:text-base">Plan your tasks and keep your day on track.</p>
       </div>
 
-      <!-- Scrollable Table Container -->
-      <div class="overflow-x-auto rounded-lg bg-white shadow-lg">
-        <table class="w-full border border-gray-300 custom-table-layout">
-          <thead class="bg-gray-200">
-            <tr>
-              <th class="px-3 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 task-column">Tasks</th>
-              <th class="px-3 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 time-column">Time</th>
-              <th class="px-3 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 actions-column">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="taskTableBody" class="divide-y divide-gray-200">
-            <!-- Task Rows will be dynamically added here -->
-          </tbody>
-        </table>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <p id="scheduleMeta" class="hidden sm:block text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+        <button onclick="openAddTaskModal()" class="w-full sm:w-auto mt-6 sm:mt-0 min-h-[44px] rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-white shadow-sm hover:from-blue-700 hover:to-purple-700 transition-all">+ Add Task</button>
       </div>
-      
-      <!-- Save and Delete Buttons (moved inside the main container) -->
-      <div class="mt-6 flex justify-center gap-4">
-        <button id="saveButton" class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Save</button>
-        <button id="deleteScheduleButton" class="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700">Delete Schedule</button>
+
+      <div id="emptyScheduleState" class="hidden rounded-2xl bg-white dark:bg-slate-800 p-6 md:p-10 text-center shadow-lg">
+        <div class="mx-auto mb-3 w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+        </div>
+        <p class="text-gray-600 dark:text-gray-300">No tasks yet. Click <span class="font-semibold text-gray-800 dark:text-gray-100">+ Add Task</span> to create your schedule.</p>
+      </div>
+
+      <div id="scheduleTableWrap" class="rounded-2xl bg-white dark:bg-slate-800 shadow-lg overflow-hidden">
+        <div class="hidden sm:flex items-center gap-4 px-5 py-4 bg-indigo-100 dark:bg-white/5 border-b-2 border-indigo-200 dark:border-white/10 text-sm sm:text-base font-semibold text-gray-800 dark:text-slate-300">
+          <span class="w-7"></span>
+          <span class="min-w-0 flex-1">Tasks</span>
+          <span class="w-40 sm:w-56">Time</span>
+          <span class="w-20 text-right">Actions</span>
+        </div>
+        <div id="taskList" class="divide-y divide-gray-100 dark:divide-slate-700"></div>
+      </div>
+
+      <div id="deleteScheduleWrap" class="mt-4 text-center hidden">
+        <button id="deleteScheduleButton" class="text-sm text-red-600 dark:text-red-400 hover:text-red-700 hover:underline">Delete entire schedule</button>
       </div>
     </div>
 
     <!-- Add Task Modal -->
-<div id="addTaskModal" class="fixed inset-0 hidden items-start justify-center bg-black bg-opacity-50 modal-overlay">
-  <div class="rounded-lg bg-white p-6 shadow-lg" style="width: 500px;">
-    <h2 class="mb-4 text-xl font-bold">Add Task</h2>
+<div id="addTaskModal" class="fixed inset-0 hidden items-center justify-center bg-black/50 p-6 sm:p-4 modal-overlay">
+  <div class="rounded-2xl bg-white dark:bg-slate-800 p-3 sm:p-6 shadow-xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
+    <h2 class="mb-4 text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">Add Task</h2>
     <input
       type="text"
       id="taskName"
       placeholder="Task Name"
-      class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2"
+      autocomplete="off"
+      class="mb-4 w-full min-h-[44px] text-base rounded-lg border border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
       onkeydown="handleEnterKey(event)" 
     />
     <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700 mb-1">Start Time (required)</label>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Time (required)</label>
       <input
         type="time"
         id="taskTime"
-        class="w-full rounded-md border border-gray-300 px-4 py-2"
+        class="w-full min-h-[44px] text-base rounded-lg border border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
         onkeydown="handleEnterKey(event)"
         required
       />
     </div>
     <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700 mb-1">End Time (Optional)</label>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Time (Optional)</label>
       <input
         type="time"
         id="taskEndTime"
-        class="w-full rounded-md border border-gray-300 px-4 py-2"
+        class="w-full min-h-[44px] text-base rounded-lg border border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
         onkeydown="handleEnterKey(event)"
       />
     </div>
     <div class="flex justify-end">
       <button
         onclick="closeAddTaskModal()"
-        class="mr-2 rounded-md bg-gray-300 px-4 py-2 text-gray-800 hover:bg-gray-400"
+        class="mr-2 rounded-lg bg-gray-100 dark:bg-slate-700 px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
       >
         Cancel
       </button>
       <button
         onclick="addTask()"
-        class="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        class="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-white hover:from-blue-700 hover:to-purple-700 shadow-sm transition-all"
       >
         Add
       </button>
@@ -170,45 +219,46 @@
 </div>
 
 <!-- Edit Task Modal -->
-<div id="editTaskModal" class="fixed inset-0 hidden items-start justify-center bg-black bg-opacity-50 modal-overlay">
-  <div class="rounded-lg bg-white p-6 shadow-lg" style="width: 500px;">
-    <h2 class="mb-4 text-xl font-bold">Edit Task</h2>
+<div id="editTaskModal" class="fixed inset-0 hidden items-center justify-center bg-black/50 p-6 sm:p-4 modal-overlay">
+  <div class="rounded-2xl bg-white dark:bg-slate-800 p-3 sm:p-6 shadow-xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
+    <h2 class="mb-4 text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">Edit Task</h2>
     <input
       type="text"
       id="editTaskName"
       placeholder="Task Name"
-      class="mb-4 w-full rounded-md border border-gray-300 px-4 py-2"
+      autocomplete="off"
+      class="mb-4 w-full min-h-[44px] text-base rounded-lg border border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
       onkeydown="handleEditEnterKey(event)" 
     />
     <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700 mb-1">Start Time (required)</label>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Time (required)</label>
       <input
         type="time"
         id="editTaskTime"
-        class="w-full rounded-md border border-gray-300 px-4 py-2"
+        class="w-full min-h-[44px] text-base rounded-lg border border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
         onkeydown="handleEditEnterKey(event)"
         required
       />
     </div>
     <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700 mb-1">End Time (Optional)</label>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Time (Optional)</label>
       <input
         type="time"
         id="editTaskEndTime"
-        class="w-full rounded-md border border-gray-300 px-4 py-2"
+        class="w-full min-h-[44px] text-base rounded-lg border border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
         onkeydown="handleEditEnterKey(event)"
       />
     </div>
     <div class="flex justify-end">
       <button
         onclick="closeEditTaskModal()"
-        class="mr-2 rounded-md bg-gray-300 px-4 py-2 text-gray-800 hover:bg-gray-400"
+        class="mr-2 rounded-lg bg-gray-100 dark:bg-slate-700 px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
       >
         Cancel
       </button>
       <button
         onclick="saveEditedTask()"
-        class="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        class="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-white hover:from-blue-700 hover:to-purple-700 shadow-sm transition-all"
       >
         Save
       </button>
@@ -217,14 +267,90 @@
 </div>
     
     <!-- Footer -->
-    <footer class="bg-gray-200 text-black py-2.5 md:py-5 mt-auto">
+    <footer id="appFooter" class="bg-white/60 dark:bg-slate-900/60 border-t border-gray-200 dark:border-slate-700 py-2.5 md:py-5 mt-auto pb-[max(0.625rem,env(safe-area-inset-bottom))]">
       <div class="max-w-6xl mx-auto px-4 text-center">
-          <p class="text-sm md:text-base">&copy; 2025 HabitTracker. All rights reserved.</p>
+          <p class="text-sm md:text-base text-gray-500 dark:text-gray-400">&copy; 2025 HabitTracker. All rights reserved.</p>
       </div>
   </footer>
+    </div>
 
     <script>
+      function isDarkTheme() {
+        return document.documentElement.classList.contains('dark');
+      }
+      function syncThemeToggle() {
+        const dark = isDarkTheme();
+        const sun = document.getElementById('themeIconSun');
+        const moon = document.getElementById('themeIconMoon');
+        if (sun) sun.classList.toggle('hidden', !dark);
+        if (moon) moon.classList.toggle('hidden', dark);
+        const btn = document.getElementById('themeToggle');
+        if (btn) btn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+      }
+      function toggleTheme() {
+        document.documentElement.classList.toggle('dark');
+        localStorage.setItem('theme', isDarkTheme() ? 'dark' : 'light');
+        syncThemeToggle();
+        window.dispatchEvent(new Event('themechange'));
+      }
+      syncThemeToggle();
+      function isMobileNav() {
+        return window.innerWidth < 768;
+      }
+      function toggleSidebar(open) {
+        const sidebar = document.getElementById('appSidebar');
+        const edgeBtn = document.getElementById('sidebarEdgeToggle');
+        const overlay = document.getElementById('sidebarOverlay');
+        const main = document.getElementById('appMain');
+        const footer = document.getElementById('appFooter');
+        const menuBtn = document.getElementById('sidebarMenuButton');
+        const mobile = isMobileNav();
+        if (typeof open !== 'boolean') {
+          open = mobile ? sidebar.classList.contains('-translate-x-full') : sidebar.classList.contains('collapsed');
+        }
+        if (mobile) {
+          sidebar.classList.remove('collapsed');
+          sidebar.classList.toggle('-translate-x-full', !open);
+          overlay.classList.toggle('hidden', !open);
+          document.body.classList.toggle('overflow-hidden', open);
+          if (main) main.classList.remove('rail');
+          if (footer) footer.classList.remove('rail');
+        } else {
+          sidebar.classList.remove('-translate-x-full');
+          sidebar.classList.toggle('collapsed', !open);
+          overlay.classList.add('hidden');
+          document.body.classList.remove('overflow-hidden');
+          if (main) main.classList.toggle('rail', !open);
+          if (footer) footer.classList.toggle('rail', !open);
+          localStorage.setItem('sidebarOpen', open ? '1' : '0');
+        }
+        if (menuBtn) menuBtn.setAttribute('aria-expanded', mobile && open ? 'true' : 'false');
+        if (edgeBtn) {
+          const isExpanded = !sidebar.classList.contains('collapsed');
+          edgeBtn.setAttribute('aria-label', isExpanded ? 'Collapse sidebar' : 'Expand sidebar');
+        }
+      }
+      (function initSidebar() {
+        if (isMobileNav()) toggleSidebar(false);
+        else toggleSidebar(localStorage.getItem('sidebarOpen') !== '0');
+        let lastMobile = isMobileNav();
+        window.addEventListener('resize', () => {
+          const mobile = isMobileNav();
+          if (mobile === lastMobile) return;
+          lastMobile = mobile;
+          if (mobile) toggleSidebar(false);
+          else toggleSidebar(localStorage.getItem('sidebarOpen') !== '0');
+        });
+      })();
+
       const token = localStorage.getItem('token');
+      document.getElementById('logoutButton').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (confirm('Are you sure you want to logout?')) {
+          localStorage.removeItem('token');
+          window.location.href = '../index.html';
+        }
+      });
     
       // Function to show message on screen
       function showMessage(message) {
@@ -247,7 +373,7 @@
       }
       
       // Improved confirm dialog function
-      function showConfirm(message, onYes, onNo) {
+      function showConfirm(message, onYes, onNo, confirmLabel) {
         const confirmDialog = document.getElementById('confirmationDialog');
         const messageDiv = document.getElementById('confirmationMessage');
         const yesButton = document.getElementById('confirmYes');
@@ -255,6 +381,7 @@
         
         // Set the message
         messageDiv.innerHTML = message;
+        yesButton.textContent = confirmLabel || 'Confirm';
         
         // Show the dialog with fade-in effect
         confirmDialog.classList.remove('hidden');
@@ -339,6 +466,135 @@
         return convertTo24HourFormat(endTimePart);
       }
     
+      function sortTasks(tasks) {
+        const hasOrder = tasks.some((t) => typeof t.order === 'number');
+        return tasks.slice().sort((a, b) => {
+          if (hasOrder) {
+            const ao = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
+            const bo = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
+            if (ao !== bo) return ao - bo;
+          }
+          return (a.time || '').localeCompare(b.time || '');
+        });
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function enableRowDrag(row) {
+        const handle = row.querySelector('.drag-handle');
+        if (!handle) return;
+
+        handle.addEventListener('pointerdown', (e) => {
+          if (e.button !== 0) return;
+          e.preventDefault();
+          handle.setPointerCapture(e.pointerId);
+          row.classList.add('dragging');
+
+          let moved = false;
+
+          const onMove = (ev) => {
+            row.style.pointerEvents = 'none';
+            const el = document.elementFromPoint(ev.clientX, ev.clientY);
+            row.style.pointerEvents = '';
+            const targetRow = el && el.closest('#taskList .task-card');
+            if (!targetRow || targetRow === row) return;
+
+            const tbody = row.parentNode;
+            const rows = [...tbody.children];
+            const srcIndex = rows.indexOf(row);
+            const tgtIndex = rows.indexOf(targetRow);
+            if (srcIndex === -1 || tgtIndex === -1 || srcIndex === tgtIndex) return;
+
+            if (srcIndex < tgtIndex) {
+              tbody.insertBefore(row, targetRow.nextSibling);
+            } else {
+              tbody.insertBefore(row, targetRow);
+            }
+            moved = true;
+          };
+
+          const onUp = async () => {
+            handle.removeEventListener('pointermove', onMove);
+            handle.removeEventListener('pointerup', onUp);
+            handle.removeEventListener('pointercancel', onUp);
+            row.classList.remove('dragging');
+            if (moved) {
+              await persistTaskOrder();
+            }
+          };
+
+          handle.addEventListener('pointermove', onMove);
+          handle.addEventListener('pointerup', onUp);
+          handle.addEventListener('pointercancel', onUp);
+        });
+      }
+
+      async function persistTaskOrder() {
+        const rows = [...document.querySelectorAll('#taskList .task-card')];
+        const orderedIds = rows
+          .map((row) => String(row.dataset.taskId || ''))
+          .filter((id) => id && id !== '[object Object]');
+        if (orderedIds.length < 2) return;
+        try {
+          let response = await fetch('/api/tasks/reorder', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token,
+            },
+            body: JSON.stringify({ orderedIds }),
+          });
+
+          if (!response.ok) {
+            response = await fetch('/api/tasks/reorder', {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token,
+              },
+              body: JSON.stringify({ orderedIds }),
+            });
+          }
+
+          if (!response.ok) {
+            for (let index = 0; index < rows.length; index++) {
+              const row = rows[index];
+              const taskData = {
+                name: row.dataset.taskName,
+                time: row.dataset.startTime,
+                order: index,
+              };
+              if (row.dataset.endTime) {
+                taskData.endTime = row.dataset.endTime;
+              }
+              const putResponse = await fetch(`/api/tasks/${row.dataset.taskId}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': token,
+                },
+                body: JSON.stringify(taskData),
+              });
+              if (!putResponse.ok) {
+                throw new Error('Failed to save task order');
+              }
+            }
+            return;
+          }
+        } catch (err) {
+          console.error('Error saving task order:', err);
+          showMessage('Failed to save task order. Please try again.');
+          await fetchAndRenderSchedule();
+        }
+      }
+
       // Function to fetch and render the schedule
       async function fetchAndRenderSchedule() {
         try {
@@ -350,26 +606,56 @@
           if (!response.ok) {
             throw new Error('Failed to fetch tasks');
           }
-          const tasks = await response.json();
-          const taskTableBody = document.getElementById('taskTableBody');
-          taskTableBody.innerHTML = "";
+          const tasks = sortTasks(await response.json());
+          const taskList = document.getElementById('taskList');
+          const emptyState = document.getElementById('emptyScheduleState');
+          const tableWrap = document.getElementById('scheduleTableWrap');
+          const deleteWrap = document.getElementById('deleteScheduleWrap');
+          const meta = document.getElementById('scheduleMeta');
+          taskList.innerHTML = "";
+
+          if (!tasks.length) {
+            emptyState.classList.remove('hidden');
+            tableWrap.classList.add('hidden');
+            deleteWrap.classList.add('hidden');
+            meta.textContent = '0 tasks';
+            return;
+          }
+
+          emptyState.classList.add('hidden');
+          tableWrap.classList.remove('hidden');
+          deleteWrap.classList.remove('hidden');
+          meta.textContent = tasks.length === 1
+            ? '1 task · drag to reorder'
+            : `${tasks.length} tasks · drag to reorder`;
     
           tasks.forEach(({ name, time, endTime, _id }) => {
-            const newRow = document.createElement('tr');
-            newRow.dataset.taskId = _id;
-            newRow.dataset.endTime = endTime || ""; // Store end time in dataset
+            const newRow = document.createElement('div');
+            newRow.className = 'task-card flex items-start sm:items-center gap-2 sm:gap-4 px-3 sm:px-5 py-3 sm:py-4 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors min-w-0';
+            newRow.dataset.taskId = String(_id);
+            newRow.dataset.taskName = name;
+            newRow.dataset.startTime = time;
+            newRow.dataset.endTime = endTime || "";
+            const timeLabel = escapeHtml(formatTime(time, endTime));
             
             newRow.innerHTML = `
-              <td class="px-2 sm:px-3 py-3 text-xs sm:text-sm task-column">${name}</td>
-              <td class="px-2 sm:px-3 py-3 text-xs sm:text-sm time-column">${formatTime(time, endTime)}</td>
-              <td class="px-2 sm:px-3 py-3 actions-column">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-start gap-1 sm:gap-4">
-                  <button onclick="openEditTaskModal(this)" class="rounded-md border border-blue-600 px-2 py-1 text-xs sm:text-sm text-blue-600 hover:bg-blue-100">Edit</button>
-                  <button onclick="deleteTask('${_id}')" class="rounded-md border border-red-600 px-2 py-1 text-xs sm:text-sm text-red-600 hover:bg-red-100">Delete</button>
-                </div>
-              </td>
+              <span class="drag-handle w-7 min-h-[44px] flex items-center justify-center text-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 select-none shrink-0" title="Drag to reorder" aria-label="Drag to reorder">&#8942;&#8942;</span>
+              <div class="min-w-0 flex-1">
+                <p class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100 break-words sm:truncate">${escapeHtml(name)}</p>
+                <p class="sm:hidden mt-0.5 text-xs text-gray-500 dark:text-gray-400">${timeLabel}</p>
+              </div>
+              <p class="hidden sm:block w-40 sm:w-56 text-sm sm:text-base text-gray-600 dark:text-gray-400 whitespace-nowrap">${timeLabel}</p>
+              <div class="flex items-center justify-end gap-1 flex-shrink-0">
+                <button type="button" onclick="openEditTaskModal(this)" class="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700" title="Edit">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                </button>
+                <button type="button" onclick="deleteTask(this.closest('.task-card').dataset.taskId)" class="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-700" title="Delete">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+              </div>
             `;
-            taskTableBody.appendChild(newRow);
+            enableRowDrag(newRow);
+            taskList.appendChild(newRow);
           });
         } catch (err) {
           console.error('Error fetching tasks:', err);
@@ -384,6 +670,7 @@
       function openAddTaskModal() {
         document.getElementById('addTaskModal').classList.remove('hidden');
         document.getElementById('addTaskModal').classList.add('flex');
+        document.getElementById('taskName').focus();
       }
     
       // Function to close the Add Task Modal
@@ -393,6 +680,8 @@
         document.getElementById('taskName').value = ""; // Clear task name
         document.getElementById('taskTime').value = ""; // Clear task time
         document.getElementById('taskEndTime').value = ""; // Clear end time
+        clearFieldError('taskName');
+        clearFieldError('taskTime');
       }
     
       // Function to handle Enter key press in the Add Task Modal
@@ -408,6 +697,25 @@
           saveEditedTask(); // Trigger the saveEditedTask function
         }
       }
+
+      // Highlight/clear a required field that failed validation
+      function markFieldError(id) {
+        document.getElementById(id).classList.add('border-red-500', 'ring-2', 'ring-red-200');
+      }
+      function clearFieldError(id) {
+        document.getElementById(id).classList.remove('border-red-500', 'ring-2', 'ring-red-200');
+      }
+
+      // Close any open modal on Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (!document.getElementById('addTaskModal').classList.contains('hidden')) {
+          closeAddTaskModal();
+        }
+        if (!document.getElementById('editTaskModal').classList.contains('hidden')) {
+          closeEditTaskModal();
+        }
+      });
     
       // Function to add a new task
       async function addTask() {
@@ -415,6 +723,9 @@
         const taskTime = document.getElementById('taskTime').value;
         const taskEndTime = document.getElementById('taskEndTime').value;
     
+        clearFieldError('taskName');
+        clearFieldError('taskTime');
+
         if (taskName && taskTime) {
           try {
             const taskData = { 
@@ -447,31 +758,19 @@
             showMessage('Failed to save task. Please try again.');
           }
         } else {
+          if (!taskName) markFieldError('taskName');
+          if (!taskTime) markFieldError('taskTime');
           showMessage('Please fill in both task name and start time.');
         }
       }
     
       // Function to open the Edit Task Modal
       function openEditTaskModal(button) {
-        const row = button.closest('tr');
-        const taskName = row.cells[0].innerText;
-        const displayedTime = row.cells[1].innerText;
+        const row = button.closest('.task-card');
+        const taskName = row.dataset.taskName || row.querySelector('p').innerText;
         const taskId = row.dataset.taskId;
-        const savedEndTime = row.dataset.endTime; // Get stored end time
-        
-        // Handle the time formatting
-        let startTime24h, endTime24h;
-        
-        if (displayedTime.includes(" - ")) {
-          // Time range format: extract start and end times
-          const [startTime12h, endTime12h] = displayedTime.split(" - ");
-          startTime24h = convertTo24HourFormat(startTime12h);
-          endTime24h = convertTo24HourFormat(endTime12h);
-        } else {
-          // Only start time
-          startTime24h = convertTo24HourFormat(displayedTime);
-          endTime24h = savedEndTime; // Use saved end time if available
-        }
+        const startTime24h = row.dataset.startTime || '';
+        const endTime24h = row.dataset.endTime || '';
     
         document.getElementById('editTaskName').value = taskName;
         document.getElementById('editTaskTime').value = startTime24h;
@@ -479,6 +778,9 @@
         document.getElementById('editTaskModal').classList.remove('hidden');
         document.getElementById('editTaskModal').classList.add('flex');
         document.getElementById('editTaskModal').dataset.taskId = taskId;
+        clearFieldError('editTaskName');
+        clearFieldError('editTaskTime');
+        document.getElementById('editTaskName').focus();
       }
     
       // Function to close the Edit Task Modal
@@ -494,6 +796,9 @@
         const taskEndTime = document.getElementById('editTaskEndTime').value;
         const taskId = document.getElementById('editTaskModal').dataset.taskId;
     
+        clearFieldError('editTaskName');
+        clearFieldError('editTaskTime');
+
         if (taskName && taskTime) {
           try {
             const taskData = { 
@@ -526,93 +831,40 @@
             showMessage('Failed to update task. Please try again.');
           }
         } else {
+          if (!taskName) markFieldError('editTaskName');
+          if (!taskTime) markFieldError('editTaskTime');
           showMessage('Please fill in both task name and start time.');
         }
       }
     
       // Function to delete a task
       async function deleteTask(taskId) {
-        try {
-          const response = await fetch(`/api/tasks/${taskId}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': token,
-            },
-          });
+        showConfirm("Are you sure you want to delete this task?",
+          async function () { // Yes callback
+            try {
+              const response = await fetch(`/api/tasks/${taskId}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': token,
+                },
+              });
     
-          if (!response.ok) {
-            throw new Error('Failed to delete task');
-          }
+              if (!response.ok) {
+                throw new Error('Failed to delete task');
+              }
     
-          await fetchAndRenderSchedule();
-        } catch (err) {
-          console.error('Error deleting task:', err);
-          showMessage('Failed to delete task. Please try again.');
-        }
+              await fetchAndRenderSchedule();
+            } catch (err) {
+              console.error('Error deleting task:', err);
+              showMessage('Failed to delete task. Please try again.');
+            }
+          },
+          function () {
+            // No callback - do nothing
+          },
+          'Delete'
+        );
       }
-    
-      // Function to save the schedule
-      async function saveSchedule() {
-        const tasks = [];
-        const rows = document.querySelectorAll('#taskTableBody tr');
-
-        rows.forEach((row) => {
-          const taskName = row.cells[0].innerText;
-          const displayedTime = row.cells[1].innerText;
-          const savedEndTime = row.dataset.endTime;
-          
-          let startTime24h, endTime24h;
-          
-          if (displayedTime.includes(" - ")) {
-            // Time range format: extract start and end times
-            const [startTime12h, endTime12h] = displayedTime.split(" - ");
-            startTime24h = convertTo24HourFormat(startTime12h);
-            endTime24h = convertTo24HourFormat(endTime12h);
-          } else {
-            // Only start time
-            startTime24h = convertTo24HourFormat(displayedTime);
-            endTime24h = savedEndTime; // Use saved end time if available
-          }
-          
-          const taskData = { 
-            name: taskName, 
-            time: startTime24h
-          };
-          
-          // Only add endTime if it exists
-          if (endTime24h) {
-            taskData.endTime = endTime24h;
-          }
-          
-          tasks.push(taskData);
-        });
-
-        try {
-          const response = await fetch('/api/tasks/save', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': token,
-            },
-            body: JSON.stringify({ tasks }),
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to save schedule');
-          }
-
-          showMessage('Schedule saved successfully!');
-          
-          // Important: Refresh the tasks to get the new IDs
-          await fetchAndRenderSchedule();
-        } catch (err) {
-          console.error('Error saving schedule:', err);
-          showMessage('Failed to save schedule. Please try again.');
-        }
-      }
-    
-      // Add event listener to the Save button
-      document.getElementById('saveButton').addEventListener('click', saveSchedule);
     
       // Function to delete the entire schedule
       async function deleteSchedule() {
@@ -639,7 +891,8 @@
           },
           function() { 
             // No callback - do nothing
-          }
+          },
+          'Delete Schedule'
         );
       }
     
